@@ -1823,7 +1823,6 @@
    "parent": "CES6054000001",
    "en": "Legal services",
    "zh": "法律服務",
-   "ai": "risk",
    "levels": {
     "2018-12": 1143.4,
     "2019-12": 1157.8,
@@ -1868,7 +1867,6 @@
    "parent": "CES6054000001",
    "en": "Accounting, tax preparation, bookkeeping, and payroll services",
    "zh": "會計、報稅、記帳與薪資服務",
-   "ai": "risk",
    "levels": {
     "2018-12": 1007.9,
     "2019-12": 1025.2,
@@ -1958,7 +1956,6 @@
    "parent": "CES6054000001",
    "en": "Specialized design services",
    "zh": "專業設計服務",
-   "ai": "risk",
    "levels": {
     "2018-12": 142.3,
     "2019-12": 142.2,
@@ -2048,7 +2045,6 @@
    "parent": "CES6054000001",
    "en": "Management, scientific, and technical consulting services",
    "zh": "管理、科學與技術顧問",
-   "ai": "risk",
    "levels": {
     "2018-12": 1500.2,
     "2019-12": 1562.9,
@@ -2138,7 +2134,6 @@
    "parent": "CES6054000001",
    "en": "Advertising, public relations, and related services",
    "zh": "廣告、公關及相關服務",
-   "ai": "risk",
    "levels": {
     "2018-12": 492.2,
     "2019-12": 488.8,
