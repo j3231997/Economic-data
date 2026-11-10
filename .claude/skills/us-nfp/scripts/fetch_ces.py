@@ -6,7 +6,10 @@ All Employees levels (thousands) for every row, and writes a JSON file that
 build_dashboard.py turns into the interactive web page.
 
 Usage:
-    python3 fetch_ces.py [--start 2025-01] [--out data/nfp_ces.json]
+    python3 fetch_ces.py [--start 2025-01] [--annual-from 2019] [--out data/nfp_ces.json]
+
+Monthly levels are kept from 3 months before --start; for the yearly change
+columns, the December level of every year from (--annual-from - 1) is kept too.
 
 API key:
     Set BLS_API_KEY (free: https://data.bls.gov/registrationEngine/).
@@ -76,6 +79,7 @@ def fetch(series_ids: list[str], start_year: int, end_year: int, key: str | None
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--start", default="2025-01", help="first month to show MoM change for (YYYY-MM)")
+    ap.add_argument("--annual-from", type=int, default=2019, help="first year to show the Dec-to-Dec yearly change for")
     ap.add_argument("--out", default="data/nfp_ces.json", help="output JSON path")
     args = ap.parse_args()
 
@@ -88,8 +92,9 @@ def main() -> None:
 
     rows = load_rows()
     key = os.environ.get("BLS_API_KEY") or None
-    print(f"Fetching {len(rows)} CES series {base:%Y-%m}..present ({'v2 with key' if key else 'v1, no key'})", file=sys.stderr)
-    raw = fetch([r["id"] for r in rows], base.year, end_year, key)
+    first_year = min(base.year, args.annual_from - 1)
+    print(f"Fetching {len(rows)} CES series {first_year}..present ({'v2 with key' if key else 'v1, no key'})", file=sys.stderr)
+    raw = fetch([r["id"] for r in rows], first_year, end_year, key)
 
     missing = []
     for r in rows:
@@ -98,7 +103,8 @@ def main() -> None:
             if not d["period"].startswith("M") or d["period"] == "M13":
                 continue
             ym = f'{d["year"]}-{d["period"][1:]}'
-            if ym < f"{base:%Y-%m}" or d["value"] in ("-", ""):
+            keep = ym >= f"{base:%Y-%m}" or (d["period"] == "M12" and int(d["year"]) >= args.annual_from - 1)
+            if not keep or d["value"] in ("-", ""):
                 continue
             levels[ym] = float(d["value"])
             if any(fn.get("code") == "P" for fn in d.get("footnotes", []) if fn):
@@ -115,6 +121,7 @@ def main() -> None:
         "source": "U.S. Bureau of Labor Statistics, Current Employment Statistics (CES), seasonally adjusted, all employees, thousands",
         "fetched_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "start": f"{start:%Y-%m}",
+        "annual_from": args.annual_from,
         "rows": rows,
         "missing": missing,
     }

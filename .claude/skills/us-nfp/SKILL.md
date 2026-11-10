@@ -12,7 +12,7 @@ description: 收集並整理美國非農就業（NFP / BLS CES）產業別逐月
 
 1. 抓資料（需要網路可連 `api.bls.gov`）：
    ```bash
-   python3 .claude/skills/us-nfp/scripts/fetch_ces.py --start 2025-01 --out data/nfp_ces.json
+   python3 .claude/skills/us-nfp/scripts/fetch_ces.py --start 2025-01 --annual-from 2019 --out data/nfp_ces.json
    ```
    - 有 `BLS_API_KEY` 環境變數時用 v2 API（一次 50 檔、每日 500 次）；沒有則用 v1（一次 25 檔、每日 25 次，共用 IP 很容易用完）。
    - 若 API 回 `daily threshold ... reached`，代表免金鑰額度已滿，請使用者提供金鑰（不要叫使用者把金鑰貼在對話裡，請他設成環境變數）。
@@ -27,7 +27,7 @@ description: 收集並整理美國非農就業（NFP / BLS CES）產業別逐月
 
 - 「展開至 L0–L5」按鈕一鍵切換顯示階層；每列 ▸/▾ 可個別展開收合。
 - 數值切換：MoM 變化、3 個月平均、就業人數水準。
-- 年度累計欄（各年度 12 月對前一年 12 月，當年為 YTD）。
+- 年度累計欄放在最右邊（MoM 與 3 個月平均檢視都會顯示）：各年度 12 月對前一年 12 月，從 `--annual-from`（預設 2019）到當年，當年為 YTD。
 - 排名上色：只標 10 個民間超級產業（Total private 底下的 L3，政府 L3 不參與），每個月份淨增加前 3 名上橘色、後 3 名上綠色（MoM 與 3 個月平均各自排名，同值並列）。
 - 數字顏色：正數黑字、負數紅字（所有欄位）。
 - 目前 Payroll（百萬人）與占總非農比重。

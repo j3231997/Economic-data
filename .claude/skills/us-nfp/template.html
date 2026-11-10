@@ -115,7 +115,10 @@ function prepare() {
   const prelim = new Set(rows.flatMap(r => r.prelim || []));
   const latest = months[0];
   const total = byId["CES0000000001"];
-  const years = [...new Set(months.map(m => m.slice(0, 4)))].sort().reverse();
+  // Yearly change columns: Dec-to-Dec from DATA.annual_from, current year = YTD. Newest first.
+  const firstYear = +(DATA.annual_from || DATA.start.slice(0, 4));
+  const years = [];
+  for (let y = +latest.slice(0, 4); y >= firstYear; y--) years.push(String(y));
   rows.forEach(r => {
     const L = r.levels;
     r.mom = {}; r.avg3 = {};
@@ -127,9 +130,9 @@ function prepare() {
     });
     r.ytd = {};
     years.forEach(y => {
-      const last = months.find(m => m.startsWith(y));
+      const last = Object.keys(L).filter(m => m.startsWith(y)).sort().pop();   // Dec, or latest month this year
       const base = `${+y - 1}-12`;
-      if (last && L[last] != null && L[base] != null) r.ytd[y] = L[last] - L[base];
+      if (last && L[base] != null) r.ytd[y] = L[last] - L[base];
     });
     r.latestLevel = L[latest];
     r.share = total && total.levels[latest] ? L[latest] / total.levels[latest] : null;
@@ -167,20 +170,21 @@ function isVisible(r, ctx) {
 }
 
 function render(ctx) {
-  const { rows, months, prelim, years } = ctx;
-  const showYtd = state.view === "mom";
+  const { rows, months, prelim, years, latest } = ctx;
+  const showYtd = state.view !== "level";
   const valueOf = (r, m) => state.view === "mom" ? r.mom[m] : state.view === "avg3" ? r.avg3[m] : r.levels[m];
   const dec = state.view === "avg3" ? 0 : state.view === "level" ? 0 : 0;
   let h = "<thead><tr class='grp'><th class='name'></th><th colspan='2'>總數</th>";
-  if (showYtd) h += `<th class='sep' colspan='${years.length}'>累計 (千人)</th>`;
-  h += `<th class='sep' colspan='${months.length}'>${VIEWS[state.view]}</th></tr>`;
+  h += `<th class='sep' colspan='${months.length}'>${VIEWS[state.view]}</th>`;
+  if (showYtd) h += `<th class='sep' colspan='${years.length}'>年度累計 (千人，12 月對前一年 12 月)</th>`;
+  h += "</tr>";
   h += "<tr class='cols'><th class='name'>產業</th><th>目前 Payroll (百萬)</th><th>占比</th>";
-  if (showYtd) years.forEach((y, i) => {
-    const last = months.find(m => m.startsWith(y));
-    h += `<th class='${i === 0 ? "sep" : ""}'>${y}${last && last.slice(5) !== "12" ? " YTD" : ""}</th>`;
-  });
   months.forEach((m, i) => {
     h += `<th class='${i === 0 ? "sep" : ""}'>${m.replace("-", "/")}${prelim.has(m) ? "<span class='p' title='preliminary 初值'>P</span>" : ""}</th>`;
+  });
+  if (showYtd) years.forEach((y, i) => {
+    const ytd = y === latest.slice(0, 4) && latest.slice(5) !== "12";
+    h += `<th class='${i === 0 ? "sep" : ""}'>${y}${ytd ? " YTD" : ""}</th>`;
   });
   h += "</tr></thead><tbody>";
   rows.forEach(r => {
@@ -192,15 +196,15 @@ function render(ctx) {
     h += `<td class='name' style='padding-left:${8 + r.level * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span></td>`;
     h += `<td class='num'>${r.latestLevel != null ? fmt(r.latestLevel / 1000, 1) : ""}</td>`;
     h += `<td class='num'>${r.share != null ? Math.round(r.share * 100) + "%" : ""}</td>`;
-    if (showYtd) years.forEach((y, i) => {
-      const v = r.ytd[y];
-      h += `<td class='num ${i === 0 ? "sep" : ""} ${v != null && Math.round(v) < 0 ? "neg" : ""}'>${fmt(v)}</td>`;
-    });
     months.forEach((m, i) => {
       const v = valueOf(r, m);
       const neg = v != null && Math.round(v) < 0;   // a value shown as "0" stays black
       const st = heatStyle(ctx, r, m, v);
       h += `<td class='num ${i === 0 ? "sep" : ""} ${neg ? "neg" : ""} ${st ? "heat" : ""}' style='${st}'>${fmt(v, dec)}</td>`;
+    });
+    if (showYtd) years.forEach((y, i) => {
+      const v = r.ytd[y];
+      h += `<td class='num ${i === 0 ? "sep" : ""} ${v != null && Math.round(v) < 0 ? "neg" : ""}'>${fmt(v)}</td>`;
     });
     h += "</tr>";
   });
