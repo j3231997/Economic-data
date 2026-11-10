@@ -1,6 +1,6 @@
 {
  "source": "U.S. Bureau of Labor Statistics, Current Employment Statistics (CES), seasonally adjusted, all employees, thousands",
- "fetched_at": "2026-11-10 11:35 UTC",
+ "fetched_at": "2026-11-10 11:47 UTC",
  "start": "2025-01",
  "annual_from": 2019,
  "rows": [
@@ -362,6 +362,7 @@
    "parent": "CES2000000001",
    "en": "Heavy and civil engineering construction",
    "zh": "重型與土木工程",
+   "ai": "build",
    "levels": {
     "2018-12": 1068.9,
     "2019-12": 1091.6,
@@ -406,6 +407,7 @@
    "parent": "CES2000000001",
    "en": "Specialty trade contractors",
    "zh": "專業工程承包",
+   "ai": "build",
    "levels": {
     "2018-12": 4677.0,
     "2019-12": 4761.8,
@@ -714,6 +716,7 @@
    "parent": "CES3100000001",
    "en": "Machinery",
    "zh": "機械",
+   "ai": "build",
    "levels": {
     "2018-12": 1129.1,
     "2019-12": 1117.9,
@@ -758,6 +761,7 @@
    "parent": "CES3100000001",
    "en": "Computer and electronic products",
    "zh": "電腦與電子產品",
+   "ai": "build",
    "levels": {
     "2018-12": 1028.1,
     "2019-12": 1043.2,
@@ -802,6 +806,7 @@
    "parent": "CES3100000001",
    "en": "Electrical equipment, appliances, and components",
    "zh": "電機設備、家電與零組件",
+   "ai": "build",
    "levels": {
     "2018-12": 405.8,
     "2019-12": 400.0,
@@ -1242,6 +1247,7 @@
    "parent": "CES4000000001",
    "en": "Utilities",
    "zh": "公用事業",
+   "ai": "build",
    "levels": {
     "2018-12": 551.2,
     "2019-12": 548.8,
@@ -1374,6 +1380,7 @@
    "parent": "CES5000000001",
    "en": "Publishing industries",
    "zh": "出版（含軟體出版）",
+   "ai": "risk",
    "levels": {
     "2018-12": 803.3,
     "2019-12": 836.6,
@@ -1506,6 +1513,7 @@
    "parent": "CES5000000001",
    "en": "Computing infrastructure, data processing, web hosting",
    "zh": "運算基礎設施、資料處理與主機代管",
+   "ai": "build",
    "levels": {
     "2018-12": 331.5,
     "2019-12": 355.8,
@@ -1638,6 +1646,7 @@
    "parent": "CES5500000001",
    "en": "Finance and insurance",
    "zh": "金融與保險",
+   "ai": "risk",
    "levels": {
     "2018-12": 6380.3,
     "2019-12": 6478.8,
@@ -1814,6 +1823,7 @@
    "parent": "CES6054000001",
    "en": "Legal services",
    "zh": "法律服務",
+   "ai": "risk",
    "levels": {
     "2018-12": 1143.4,
     "2019-12": 1157.8,
@@ -1858,6 +1868,7 @@
    "parent": "CES6054000001",
    "en": "Accounting, tax preparation, bookkeeping, and payroll services",
    "zh": "會計、報稅、記帳與薪資服務",
+   "ai": "risk",
    "levels": {
     "2018-12": 1007.9,
     "2019-12": 1025.2,
@@ -1902,6 +1913,7 @@
    "parent": "CES6054000001",
    "en": "Architectural, engineering, and related services",
    "zh": "建築、工程及相關服務",
+   "ai": "build",
    "levels": {
     "2018-12": 1491.0,
     "2019-12": 1532.2,
@@ -1946,6 +1958,7 @@
    "parent": "CES6054000001",
    "en": "Specialized design services",
    "zh": "專業設計服務",
+   "ai": "risk",
    "levels": {
     "2018-12": 142.3,
     "2019-12": 142.2,
@@ -1990,6 +2003,7 @@
    "parent": "CES6054000001",
    "en": "Computer systems design and related services",
    "zh": "電腦系統設計及相關服務",
+   "ai": "risk",
    "levels": {
     "2018-12": 2154.4,
     "2019-12": 2213.6,
@@ -2034,6 +2048,7 @@
    "parent": "CES6054000001",
    "en": "Management, scientific, and technical consulting services",
    "zh": "管理、科學與技術顧問",
+   "ai": "risk",
    "levels": {
     "2018-12": 1500.2,
     "2019-12": 1562.9,
@@ -2078,6 +2093,7 @@
    "parent": "CES6054000001",
    "en": "Scientific research and development services",
    "zh": "科學研究與開發",
+   "ai": "build",
    "levels": {
     "2018-12": 709.3,
     "2019-12": 755.3,
@@ -2122,6 +2138,7 @@
    "parent": "CES6054000001",
    "en": "Advertising, public relations, and related services",
    "zh": "廣告、公關及相關服務",
+   "ai": "risk",
    "levels": {
     "2018-12": 492.2,
     "2019-12": 488.8,

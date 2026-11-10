@@ -11,16 +11,20 @@
   --hot: 232, 120, 40;   /* L3 top 3 net gain in the period */
   --cold: 70, 150, 90;   /* L3 bottom 3 */
   --rowhover: #f3f6fa;
+  --ai-build: #fbe1df;   /* benefits from AI build-out */
+  --ai-risk: #dde9f8;    /* exposed to AI substitution */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
     --head: #24282d; --accent: #8db8e0; --neg: #ff8a80; --rowhover: #23282f;
+    --ai-build: #4a2a2a; --ai-risk: #243650;
   }
 }
 :root[data-theme="dark"] {
   --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
   --head: #24282d; --accent: #8db8e0; --neg: #ff8a80; --rowhover: #23282f;
+  --ai-build: #4a2a2a; --ai-risk: #243650;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink);
@@ -51,6 +55,8 @@ td.sep, th.sep { border-left: 1px solid var(--line-strong); }
 tbody tr:hover td { background-color: var(--rowhover); }
 tbody tr:hover td.heat { filter: brightness(0.97); }
 td.neg { color: var(--neg); }
+td.name.ai-build { background: var(--ai-build); }
+td.name.ai-risk { background: var(--ai-risk); }
 .lv0 td { font-weight: 700; } .lv1 td { font-weight: 700; } .lv2 td { font-weight: 600; }
 .lv0 td, .lv1 td { border-top: 1px solid var(--line-strong); }
 .caret { display: inline-block; width: 16px; text-align: center; cursor: pointer; color: var(--muted); user-select: none; }
@@ -74,6 +80,7 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
   <div class="group" id="viewBtns"><span>數值</span></div>
   <div class="group">
     <label class="chk"><input type="checkbox" id="heat" checked> 民間超級產業前/後 3 名上色</label>
+    <label class="chk"><input type="checkbox" id="showAi" checked> AI 影響標示</label>
     <label class="chk"><input type="checkbox" id="showZh" checked> 中文名稱</label>
   </div>
 </div>
@@ -84,6 +91,8 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
     <span><span class="sw" style="background:rgba(var(--cold),.45)"></span>後 3 名</span>
     <span>（MoM 與 3 個月平均各自排名；同值並列）</span>
     <span>正數黑字、<span style="color:var(--neg)">負數紅字</span></span>
+    <span><span class="sw" style="background:var(--ai-build);outline:1px solid var(--line-strong)"></span>產業名稱淡紅：受惠 AI 建置</span>
+    <span><span class="sw" style="background:var(--ai-risk);outline:1px solid var(--line-strong)"></span>產業名稱淡藍：易被 AI 取代</span>
     <span><b style="color:var(--accent)">P</b> 初值（preliminary），後續兩個月會修正</span>
     <span>點擊產業名稱前的 ▸ / ▾ 可個別展開或收合</span>
   </div>
@@ -93,7 +102,8 @@ const DATA = /*__NFP_DATA__*/null;
 
 const VIEWS = { mom: "MoM 變化 (千人)", avg3: "3個月平均 (千人)", level: "就業人數 (千人)" };
 const LEVEL_NAMES = ["總數", "民間 / 政府", "部門", "超級產業", "細產業", "次細產業"];
-const state = { view: "mom", heat: true, collapsed: new Set() };
+const state = { view: "mom", heat: true, ai: true, collapsed: new Set() };
+const AI_TIP = { build: "受惠 AI 建置", risk: "易被 AI 取代" };
 
 function ymPrev(ym, n = 1) {
   let [y, m] = ym.split("-").map(Number);
@@ -135,7 +145,7 @@ function prepare() {
       if (last && L[base] != null) r.ytd[y] = L[last] - L[base];
     });
     r.latestLevel = L[latest];
-    r.share = total && total.levels[latest] ? L[latest] / total.levels[latest] : null;
+    r.share = L[latest] != null && total && total.levels[latest] ? L[latest] / total.levels[latest] : null;
   });
   // Per month, the private-sector L3 supersectors (under Total private) with the 3 largest and
   // 3 smallest values (ties at the cutoff included). Government L3 rows are not ranked.
@@ -193,7 +203,8 @@ function render(ctx) {
     const caret = hasKids ? `<span class='caret' data-id='${r.id}'>${state.collapsed.has(r.id) ? "▸" : "▾"}</span>`
                           : "<span class='caret leaf'></span>";
     h += `<tr class='lv${r.level}' title='${r.id}'>`;
-    h += `<td class='name' style='padding-left:${8 + r.level * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span></td>`;
+    const ai = state.ai && r.ai ? ` ai-${r.ai}` : "";
+    h += `<td class='name${ai}' style='padding-left:${8 + r.level * 18}px'${ai ? ` title='${AI_TIP[r.ai]}'` : ""}>${caret}${r.en}<span class='zh'>${r.zh}</span></td>`;
     h += `<td class='num'>${r.latestLevel != null ? fmt(r.latestLevel / 1000, 1) : ""}</td>`;
     h += `<td class='num'>${r.share != null ? Math.round(r.share * 100) + "%" : ""}</td>`;
     months.forEach((m, i) => {
@@ -243,6 +254,7 @@ function init() {
     vb.appendChild(b);
   });
   document.getElementById("heat").onchange = e => { state.heat = e.target.checked; render(ctx); };
+  document.getElementById("showAi").onchange = e => { state.ai = e.target.checked; render(ctx); };
   document.getElementById("showZh").onchange = e => document.body.classList.toggle("hide-zh", !e.target.checked);
   document.getElementById("tbl").addEventListener("click", e => {
     const id = e.target.dataset && e.target.dataset.id;
