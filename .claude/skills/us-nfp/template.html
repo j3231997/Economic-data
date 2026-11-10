@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美國非農就業 NFP</title>
+<style>
+:root {
+  --bg: #f6f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #6b6f76; --line: #e2e2dc; --line-strong: #c9c9c1;
+  --head: #eeeee8; --accent: #2f5d8a; --neg: #b3261e;
+  --hot: 232, 120, 40;   /* large positive surprise */
+  --cold: 70, 150, 90;   /* large negative surprise */
+  --rowhover: #f3f6fa;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
+    --head: #24282d; --accent: #8db8e0; --neg: #ff8a80; --rowhover: #23282f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
+  --head: #24282d; --accent: #8db8e0; --neg: #ff8a80; --rowhover: #23282f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif; }
+header { padding: 20px 16px 8px; max-width: 1600px; margin: 0 auto; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.sub { color: var(--muted); font-size: 12.5px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 10px 16px; max-width: 1600px; margin: 0 auto; }
+.group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.group > span { color: var(--muted); font-size: 12.5px; margin-right: 2px; }
+button.seg { border: 1px solid var(--line-strong); background: var(--panel); color: var(--ink); padding: 4px 10px;
+  border-radius: 6px; font: inherit; font-size: 12.5px; cursor: pointer; }
+button.seg:hover { border-color: var(--accent); }
+button.seg[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+label.chk { font-size: 12.5px; display: flex; gap: 4px; align-items: center; cursor: pointer; }
+.wrap { max-width: 1600px; margin: 0 auto 32px; padding: 0 16px; }
+.scroller { overflow: auto; max-height: calc(100vh - 150px); border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); }
+table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; min-width: 100%; }
+th, td { padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+thead th { position: sticky; top: 0; z-index: 2; background: var(--head); font-weight: 600; font-size: 12.5px;
+  border-bottom: 1px solid var(--line-strong); text-align: right; }
+thead tr.grp th { top: 0; text-align: center; font-weight: 600; color: var(--muted); }
+thead tr.cols th { top: 27px; }
+th.name, td.name { position: sticky; left: 0; z-index: 1; background: var(--panel); text-align: left; border-right: 1px solid var(--line-strong); min-width: 300px; }
+thead th.name { z-index: 3; background: var(--head); }
+td.num { text-align: right; min-width: 64px; }
+td.sep, th.sep { border-left: 1px solid var(--line-strong); }
+tbody tr:hover td { background-color: var(--rowhover); }
+tbody tr:hover td.heat { filter: brightness(0.97); }
+td.neg { color: var(--neg); }
+.lv0 td { font-weight: 700; } .lv1 td { font-weight: 700; } .lv2 td { font-weight: 600; }
+.lv0 td, .lv1 td { border-top: 1px solid var(--line-strong); }
+.caret { display: inline-block; width: 16px; text-align: center; cursor: pointer; color: var(--muted); user-select: none; }
+.caret.leaf { cursor: default; }
+.zh { color: var(--muted); font-size: 12px; margin-left: 6px; font-weight: 400; }
+.hide-zh .zh { display: none; }
+th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
+.legend { color: var(--muted); font-size: 12px; padding: 8px 2px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; }
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+@media (max-width: 640px) { th.name, td.name { min-width: 190px; } .zh { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>美國非農就業（NFP）產業別變化</h1>
+  <div class="sub" id="meta"></div>
+</header>
+<div class="controls">
+  <div class="group" id="levelBtns"><span>展開至</span></div>
+  <div class="group" id="viewBtns"><span>數值</span></div>
+  <div class="group">
+    <label class="chk"><input type="checkbox" id="heat" checked> 異常值上色</label>
+    <label class="chk"><input type="checkbox" id="showZh" checked> 中文名稱</label>
+  </div>
+</div>
+<div class="wrap">
+  <div class="scroller"><table id="tbl"></table></div>
+  <div class="legend">
+    <span><span class="sw" style="background:rgba(var(--hot),.55)"></span>高於該產業期間平均 1 個標準差以上</span>
+    <span><span class="sw" style="background:rgba(var(--cold),.55)"></span>低於 1 個標準差以上</span>
+    <span><b style="color:var(--accent)">P</b> 初值（preliminary），後續兩個月會修正</span>
+    <span>點擊產業名稱前的 ▸ / ▾ 可個別展開或收合</span>
+  </div>
+</div>
+<script>
+const DATA = /*__NFP_DATA__*/null;
+
+const VIEWS = { mom: "MoM 變化 (千人)", avg3: "3個月平均 (千人)", level: "就業人數 (千人)" };
+const LEVEL_NAMES = ["總數", "民間 / 政府", "部門", "超級產業", "細產業"];
+const state = { view: "mom", heat: true, collapsed: new Set() };
+
+function ymPrev(ym, n = 1) {
+  let [y, m] = ym.split("-").map(Number);
+  m -= n; while (m <= 0) { m += 12; y--; }
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+const fmt = (v, d = 0) => {
+  if (v == null || Number.isNaN(v)) return "";
+  const r = Math.round(v * 10 ** d) / 10 ** d || 0;   // avoid "-0"
+  return r.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+};
+
+function prepare() {
+  const rows = DATA.rows;
+  const byId = Object.fromEntries(rows.map(r => [r.id, r]));
+  rows.forEach(r => { r.children = rows.filter(c => c.parent === r.id).map(c => c.id); });
+  const allMonths = [...new Set(rows.flatMap(r => Object.keys(r.levels)))].sort();
+  const months = allMonths.filter(m => m >= DATA.start).reverse();   // newest first, like the sheet
+  const prelim = new Set(rows.flatMap(r => r.prelim || []));
+  const latest = months[0];
+  const total = byId["CES0000000001"];
+  const years = [...new Set(months.map(m => m.slice(0, 4)))].sort().reverse();
+  rows.forEach(r => {
+    const L = r.levels;
+    r.mom = {}; r.avg3 = {};
+    months.forEach(m => {
+      const p = ymPrev(m);
+      if (L[m] != null && L[p] != null) r.mom[m] = L[m] - L[p];
+      const p3 = ymPrev(m, 3);
+      if (L[m] != null && L[p3] != null) r.avg3[m] = (L[m] - L[p3]) / 3;
+    });
+    r.ytd = {};
+    years.forEach(y => {
+      const last = months.find(m => m.startsWith(y));
+      const base = `${+y - 1}-12`;
+      if (last && L[last] != null && L[base] != null) r.ytd[y] = L[last] - L[base];
+    });
+    const vals = Object.values(r.mom);
+    const mean = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
+    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(vals.length - 1, 1));
+    r.stat = { mean, sd };
+    r.latestLevel = L[latest];
+    r.share = total && total.levels[latest] ? L[latest] / total.levels[latest] : null;
+  });
+  return { rows, byId, months, prelim, latest, years };
+}
+
+function heatStyle(r, v) {
+  if (!state.heat || state.view !== "mom" || v == null || !r.stat.sd) return "";
+  const z = (v - r.stat.mean) / r.stat.sd;
+  if (Math.abs(z) < 1) return "";
+  const a = Math.min(0.15 + (Math.abs(z) - 1) * 0.3, 0.6).toFixed(2);
+  return `background-color:rgba(var(${z > 0 ? "--hot" : "--cold"}),${a})`;
+}
+
+function isVisible(r, ctx) {
+  let p = r.parent;
+  while (p) { if (state.collapsed.has(p)) return false; p = ctx.byId[p].parent; }
+  return true;
+}
+
+function render(ctx) {
+  const { rows, months, prelim, years } = ctx;
+  const showYtd = state.view === "mom";
+  const valueOf = (r, m) => state.view === "mom" ? r.mom[m] : state.view === "avg3" ? r.avg3[m] : r.levels[m];
+  const dec = state.view === "avg3" ? 0 : state.view === "level" ? 0 : 0;
+  let h = "<thead><tr class='grp'><th class='name'></th><th colspan='2'>總數</th>";
+  if (showYtd) h += `<th class='sep' colspan='${years.length}'>累計 (千人)</th>`;
+  h += `<th class='sep' colspan='${months.length}'>${VIEWS[state.view]}</th></tr>`;
+  h += "<tr class='cols'><th class='name'>產業</th><th>目前 Payroll (百萬)</th><th>占比</th>";
+  if (showYtd) years.forEach((y, i) => {
+    const last = months.find(m => m.startsWith(y));
+    h += `<th class='${i === 0 ? "sep" : ""}'>${y}${last && last.slice(5) !== "12" ? " YTD" : ""}</th>`;
+  });
+  months.forEach((m, i) => {
+    h += `<th class='${i === 0 ? "sep" : ""}'>${m.replace("-", "/")}${prelim.has(m) ? "<span class='p' title='preliminary 初值'>P</span>" : ""}</th>`;
+  });
+  h += "</tr></thead><tbody>";
+  rows.forEach(r => {
+    if (!isVisible(r, ctx)) return;
+    const hasKids = r.children.length > 0;
+    const caret = hasKids ? `<span class='caret' data-id='${r.id}'>${state.collapsed.has(r.id) ? "▸" : "▾"}</span>`
+                          : "<span class='caret leaf'></span>";
+    h += `<tr class='lv${r.level}' title='${r.id}'>`;
+    h += `<td class='name' style='padding-left:${8 + r.level * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span></td>`;
+    h += `<td class='num'>${r.latestLevel != null ? fmt(r.latestLevel / 1000, 1) : ""}</td>`;
+    h += `<td class='num'>${r.share != null ? Math.round(r.share * 100) + "%" : ""}</td>`;
+    if (showYtd) years.forEach((y, i) => {
+      const v = r.ytd[y];
+      h += `<td class='num ${i === 0 ? "sep" : ""} ${v < 0 ? "neg" : ""}'>${fmt(v)}</td>`;
+    });
+    months.forEach((m, i) => {
+      const v = valueOf(r, m);
+      const neg = state.view !== "level" && v < 0;
+      const st = heatStyle(r, v);
+      h += `<td class='num ${i === 0 ? "sep" : ""} ${neg ? "neg" : ""} ${st ? "heat" : ""}' style='${st}'>${fmt(v, dec)}</td>`;
+    });
+    h += "</tr>";
+  });
+  h += "</tbody>";
+  document.getElementById("tbl").innerHTML = h;
+}
+
+function setLevel(ctx, n) {
+  state.collapsed = new Set(ctx.rows.filter(r => r.level >= n && r.children.length).map(r => r.id));
+  syncLevelBtns(n);
+  render(ctx);
+}
+function syncLevelBtns(n) {
+  document.querySelectorAll("#levelBtns button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.n === n)));
+}
+
+function init() {
+  if (!DATA) { document.getElementById("tbl").outerHTML = "<div class='empty'>尚無資料：請先執行 fetch_ces.py 與 build_dashboard.py</div>"; return; }
+  const ctx = prepare();
+  const maxLv = Math.max(...ctx.rows.map(r => r.level));
+  document.getElementById("meta").textContent =
+    `資料來源：${DATA.source}｜最新月份 ${ctx.latest}｜擷取時間 ${DATA.fetched_at}` +
+    (DATA.missing && DATA.missing.length ? `｜缺資料：${DATA.missing.join(", ")}` : "");
+  const lb = document.getElementById("levelBtns");
+  for (let n = 0; n <= maxLv; n++) {
+    const b = document.createElement("button");
+    b.className = "seg"; b.dataset.n = n; b.textContent = `L${n} ${LEVEL_NAMES[n] || ""}`;
+    b.onclick = () => setLevel(ctx, n);
+    lb.appendChild(b);
+  }
+  const vb = document.getElementById("viewBtns");
+  Object.entries(VIEWS).forEach(([k, label]) => {
+    const b = document.createElement("button");
+    b.className = "seg"; b.textContent = label; b.setAttribute("aria-pressed", String(k === state.view));
+    b.onclick = () => { state.view = k; vb.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(ctx); };
+    vb.appendChild(b);
+  });
+  document.getElementById("heat").onchange = e => { state.heat = e.target.checked; render(ctx); };
+  document.getElementById("showZh").onchange = e => document.body.classList.toggle("hide-zh", !e.target.checked);
+  document.getElementById("tbl").addEventListener("click", e => {
+    const id = e.target.dataset && e.target.dataset.id;
+    if (!id) return;
+    state.collapsed.has(id) ? state.collapsed.delete(id) : state.collapsed.add(id);
+    syncLevelBtns(-1);
+    render(ctx);
+  });
+  setLevel(ctx, 3);
+}
+init();
+</script>
+</body>
+</html>
