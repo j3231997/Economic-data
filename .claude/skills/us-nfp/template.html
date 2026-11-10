@@ -73,15 +73,15 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
   <div class="group" id="levelBtns"><span>展開至</span></div>
   <div class="group" id="viewBtns"><span>數值</span></div>
   <div class="group">
-    <label class="chk"><input type="checkbox" id="heat" checked> L3 前/後 3 名上色</label>
+    <label class="chk"><input type="checkbox" id="heat" checked> 民間超級產業前/後 3 名上色</label>
     <label class="chk"><input type="checkbox" id="showZh" checked> 中文名稱</label>
   </div>
 </div>
 <div class="wrap">
   <div class="scroller"><table id="tbl"></table></div>
   <div class="legend">
-    <span><span class="sw" style="background:rgba(var(--hot),.45)"></span>該月 L3 淨增加前 3 名</span>
-    <span><span class="sw" style="background:rgba(var(--cold),.45)"></span>該月 L3 淨增加後 3 名</span>
+    <span><span class="sw" style="background:rgba(var(--hot),.45)"></span>該月民間超級產業（L3）淨增加前 3 名</span>
+    <span><span class="sw" style="background:rgba(var(--cold),.45)"></span>後 3 名</span>
     <span>（MoM 與 3 個月平均各自排名；同值並列）</span>
     <span>正數黑字、<span style="color:var(--neg)">負數紅字</span></span>
     <span><b style="color:var(--accent)">P</b> 初值（preliminary），後續兩個月會修正</span>
@@ -134,8 +134,11 @@ function prepare() {
     r.latestLevel = L[latest];
     r.share = total && total.levels[latest] ? L[latest] / total.levels[latest] : null;
   });
-  // Per month, the L3 industries with the 3 largest and 3 smallest values (ties at the cutoff included).
-  const l3 = rows.filter(r => r.level === 3);
+  // Per month, the private-sector L3 supersectors (under Total private) with the 3 largest and
+  // 3 smallest values (ties at the cutoff included). Government L3 rows are not ranked.
+  const underPrivate = r => { for (let p = r.parent; p; p = byId[p].parent) if (p === "CES0500000001") return true; return false; };
+  rows.forEach(r => { r.ranked = r.level === 3 && underPrivate(r); });
+  const l3 = rows.filter(r => r.ranked);
   const rank = {};
   ["mom", "avg3"].forEach(k => {
     rank[k] = {};
@@ -149,7 +152,7 @@ function prepare() {
 }
 
 function heatStyle(ctx, r, m, v) {
-  if (!state.heat || r.level !== 3 || v == null) return "";
+  if (!state.heat || !r.ranked || v == null) return "";
   const cut = (ctx.rank[state.view] || {})[m];
   if (!cut) return "";
   if (v >= cut.hi) return "background-color:rgba(var(--hot),.45)";
