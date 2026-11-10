@@ -6,7 +6,7 @@ description: 收集並整理美國非農就業（NFP / BLS CES）產業別逐月
 # 美國 NFP 收集與整理
 
 資料來源：BLS Current Employment Statistics（CES），季調後、All Employees、單位千人。
-產業階層依 BLS `ce.industry` 的 display_level，收錄 L0（Total nonfarm）到 L4（細產業，例如 Wholesale trade、Finance and insurance、Accommodation and food services）。階層與 series ID 定義在 `series.json`，要增減產業改那個檔即可。
+產業階層依 BLS `ce.industry` 的 display_level，收錄 L0（Total nonfarm）到 L4（細產業，例如 Wholesale trade、Finance and insurance、Accommodation and food services），另有部分 L5（Durable goods、Professional, scientific, and technical services、Management of companies and enterprises、Administrative and support and waste services、Accommodation and food services 底下的 NAICS 4 位數產業）。細項產業（如 CES6055111401）比總數晚一個月公布，最新月會是空白。階層與 series ID 定義在 `series.json`，要增減產業改那個檔即可。
 
 ## 步驟
 
@@ -25,7 +25,7 @@ description: 收集並整理美國非農就業（NFP / BLS CES）產業別逐月
 
 ## 網頁功能
 
-- 「展開至 L0–L4」按鈕一鍵切換顯示階層；每列 ▸/▾ 可個別展開收合。
+- 「展開至 L0–L5」按鈕一鍵切換顯示階層；每列 ▸/▾ 可個別展開收合。
 - 數值切換：MoM 變化、3 個月平均、就業人數水準。
 - 年度累計欄（各年度 12 月對前一年 12 月，當年為 YTD）。
 - 排名上色：只標 10 個民間超級產業（Total private 底下的 L3，政府 L3 不參與），每個月份淨增加前 3 名上橘色、後 3 名上綠色（MoM 與 3 個月平均各自排名，同值並列）。

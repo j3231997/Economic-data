@@ -92,7 +92,7 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
 const DATA = /*__NFP_DATA__*/null;
 
 const VIEWS = { mom: "MoM 變化 (千人)", avg3: "3個月平均 (千人)", level: "就業人數 (千人)" };
-const LEVEL_NAMES = ["總數", "民間 / 政府", "部門", "超級產業", "細產業"];
+const LEVEL_NAMES = ["總數", "民間 / 政府", "部門", "超級產業", "細產業", "次細產業"];
 const state = { view: "mom", heat: true, collapsed: new Set() };
 
 function ymPrev(ym, n = 1) {
@@ -194,7 +194,7 @@ function render(ctx) {
     h += `<td class='num'>${r.share != null ? Math.round(r.share * 100) + "%" : ""}</td>`;
     if (showYtd) years.forEach((y, i) => {
       const v = r.ytd[y];
-      h += `<td class='num ${i === 0 ? "sep" : ""} ${v < 0 ? "neg" : ""}'>${fmt(v)}</td>`;
+      h += `<td class='num ${i === 0 ? "sep" : ""} ${v != null && Math.round(v) < 0 ? "neg" : ""}'>${fmt(v)}</td>`;
     });
     months.forEach((m, i) => {
       const v = valueOf(r, m);
