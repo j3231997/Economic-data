@@ -8,8 +8,8 @@
 :root {
   --bg: #f6f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #6b6f76; --line: #e2e2dc; --line-strong: #c9c9c1;
   --head: #eeeee8; --accent: #2f5d8a; --neg: #b3261e;
-  --hot: 232, 120, 40;   /* large positive surprise */
-  --cold: 70, 150, 90;   /* large negative surprise */
+  --hot: 232, 120, 40;   /* L3 top 3 net gain in the period */
+  --cold: 70, 150, 90;   /* L3 bottom 3 */
   --rowhover: #f3f6fa;
 }
 @media (prefers-color-scheme: dark) {
@@ -73,15 +73,17 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
   <div class="group" id="levelBtns"><span>展開至</span></div>
   <div class="group" id="viewBtns"><span>數值</span></div>
   <div class="group">
-    <label class="chk"><input type="checkbox" id="heat" checked> 異常值上色</label>
+    <label class="chk"><input type="checkbox" id="heat" checked> L3 前/後 3 名上色</label>
     <label class="chk"><input type="checkbox" id="showZh" checked> 中文名稱</label>
   </div>
 </div>
 <div class="wrap">
   <div class="scroller"><table id="tbl"></table></div>
   <div class="legend">
-    <span><span class="sw" style="background:rgba(var(--hot),.55)"></span>高於該產業期間平均 1 個標準差以上</span>
-    <span><span class="sw" style="background:rgba(var(--cold),.55)"></span>低於 1 個標準差以上</span>
+    <span><span class="sw" style="background:rgba(var(--hot),.45)"></span>該月 L3 淨增加前 3 名</span>
+    <span><span class="sw" style="background:rgba(var(--cold),.45)"></span>該月 L3 淨增加後 3 名</span>
+    <span>（MoM 與 3 個月平均各自排名；同值並列）</span>
+    <span>正數黑字、<span style="color:var(--neg)">負數紅字</span></span>
     <span><b style="color:var(--accent)">P</b> 初值（preliminary），後續兩個月會修正</span>
     <span>點擊產業名稱前的 ▸ / ▾ 可個別展開或收合</span>
   </div>
@@ -129,22 +131,30 @@ function prepare() {
       const base = `${+y - 1}-12`;
       if (last && L[last] != null && L[base] != null) r.ytd[y] = L[last] - L[base];
     });
-    const vals = Object.values(r.mom);
-    const mean = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
-    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(vals.length - 1, 1));
-    r.stat = { mean, sd };
     r.latestLevel = L[latest];
     r.share = total && total.levels[latest] ? L[latest] / total.levels[latest] : null;
   });
-  return { rows, byId, months, prelim, latest, years };
+  // Per month, the L3 industries with the 3 largest and 3 smallest values (ties at the cutoff included).
+  const l3 = rows.filter(r => r.level === 3);
+  const rank = {};
+  ["mom", "avg3"].forEach(k => {
+    rank[k] = {};
+    months.forEach(m => {
+      const vals = l3.map(r => r[k][m]).filter(v => v != null).sort((a, b) => b - a);
+      if (vals.length < 6) return;
+      rank[k][m] = { hi: vals[2], lo: vals[vals.length - 3] };
+    });
+  });
+  return { rows, byId, months, prelim, latest, years, rank };
 }
 
-function heatStyle(r, v) {
-  if (!state.heat || state.view !== "mom" || v == null || !r.stat.sd) return "";
-  const z = (v - r.stat.mean) / r.stat.sd;
-  if (Math.abs(z) < 1) return "";
-  const a = Math.min(0.15 + (Math.abs(z) - 1) * 0.3, 0.6).toFixed(2);
-  return `background-color:rgba(var(${z > 0 ? "--hot" : "--cold"}),${a})`;
+function heatStyle(ctx, r, m, v) {
+  if (!state.heat || r.level !== 3 || v == null) return "";
+  const cut = (ctx.rank[state.view] || {})[m];
+  if (!cut) return "";
+  if (v >= cut.hi) return "background-color:rgba(var(--hot),.45)";
+  if (v <= cut.lo) return "background-color:rgba(var(--cold),.45)";
+  return "";
 }
 
 function isVisible(r, ctx) {
@@ -185,8 +195,8 @@ function render(ctx) {
     });
     months.forEach((m, i) => {
       const v = valueOf(r, m);
-      const neg = state.view !== "level" && v < 0;
-      const st = heatStyle(r, v);
+      const neg = v != null && Math.round(v) < 0;   // a value shown as "0" stays black
+      const st = heatStyle(ctx, r, m, v);
       h += `<td class='num ${i === 0 ? "sep" : ""} ${neg ? "neg" : ""} ${st ? "heat" : ""}' style='${st}'>${fmt(v, dec)}</td>`;
     });
     h += "</tr>";
