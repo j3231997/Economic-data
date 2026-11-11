@@ -1,5 +1,5 @@
 {
-  "_note": "CPI-U U.S. city average item hierarchy, following the BLS CPI news release Table 2/3 grouping. code = BLS item code; the fetcher builds CUSR0000<code> (seasonally adjusted, used for MoM) and CUUR0000<code> (not seasonally adjusted, used for YoY). level 0 = All items; parent = code of the parent row. Edit this file to add/remove rows. weight is optional (relative importance, % of All items) — fill it from the BLS relative importance table to enable the contribution view. special = aggregate outside the tree (not a child of parent); after = code of the row whose subtree it is displayed right below (indented to that row's level). hidden = fetched (used as an input to derived rows) but not displayed. derived = not fetched; computed in build_dashboard.py as plus items (or base) minus the listed items, using previous-month relative importance (weights.json) and unrounded SA (MoM) / NSA (YoY) index changes, then chained into an index (first month = 100).",
+  "_note": "CPI-U U.S. city average item hierarchy, following the BLS CPI news release Table 2/3 grouping. code = BLS item code; the fetcher builds CUSR0000<code> (seasonally adjusted, used for MoM) and CUUR0000<code> (not seasonally adjusted, used for YoY). level 0 = All items; parent = code of the parent row. Edit this file to add/remove rows. weight is optional (relative importance, % of All items) — fill it from the BLS relative importance table to enable the contribution view. special = aggregate outside the tree (not a child of parent); after = code of the row whose subtree it is displayed right below (indented to that row's level). follow = code of a sibling this row always stays right below, regardless of sort. hidden = fetched (used as an input to derived rows) but not displayed. derived = not fetched; computed in build_dashboard.py as plus items (or base) minus the listed items, using previous-month relative importance (weights.json) and unrounded SA (MoM) / NSA (YoY) index changes, then chained into an index (first month = 100).",
   "rows": [
     {"code": "SA0", "level": 0, "parent": null, "en": "All items", "zh": "CPI 總指數"},
     {"code": "SAF1", "level": 1, "parent": "SA0", "en": "Food", "zh": "食品"},
@@ -23,7 +23,7 @@
     {"code": "SAH3", "level": 3, "parent": "SACL1E", "en": "Household furnishings and supplies", "zh": "家具與家用品"},
     {"code": "SAA", "level": 3, "parent": "SACL1E", "en": "Apparel", "zh": "服飾"},
     {"code": "SETA01", "level": 3, "parent": "SACL1E", "en": "New vehicles", "zh": "新車"},
-    {"code": "SETA02", "level": 3, "parent": "SACL1E", "en": "Used cars and trucks", "zh": "二手車"},
+    {"code": "SETA02", "level": 3, "parent": "SACL1E", "en": "Used cars and trucks", "zh": "二手車", "follow": "SETA01"},
     {"code": "SETC", "level": 3, "parent": "SACL1E", "en": "Motor vehicle parts and equipment", "zh": "汽車零件與設備"},
     {"code": "SAM1", "level": 3, "parent": "SACL1E", "en": "Medical care commodities", "zh": "醫療用品"},
     {"code": "SARC", "level": 3, "parent": "SACL1E", "en": "Recreation commodities", "zh": "休閒商品"},
