@@ -1,5 +1,5 @@
 {
-  "_note": "CPI-U U.S. city average item hierarchy, following the BLS CPI news release Table 2/3 grouping. code = BLS item code; the fetcher builds CUSR0000<code> (seasonally adjusted, used for MoM) and CUUR0000<code> (not seasonally adjusted, used for YoY). level 0 = All items; parent = code of the parent row. Edit this file to add/remove rows. weight is optional (relative importance, % of All items) — fill it from the BLS relative importance table to enable the contribution view. special = aggregate outside the tree (not a child of parent); after = code of the row whose subtree it is displayed right below (indented to that row's level). derived = not fetched; computed in build_dashboard.py as base minus the listed items, using previous-month relative importance (weights.json) and unrounded SA (MoM) / NSA (YoY) index changes, then chained into an index (first month = 100).",
+  "_note": "CPI-U U.S. city average item hierarchy, following the BLS CPI news release Table 2/3 grouping. code = BLS item code; the fetcher builds CUSR0000<code> (seasonally adjusted, used for MoM) and CUUR0000<code> (not seasonally adjusted, used for YoY). level 0 = All items; parent = code of the parent row. Edit this file to add/remove rows. weight is optional (relative importance, % of All items) — fill it from the BLS relative importance table to enable the contribution view. special = aggregate outside the tree (not a child of parent); after = code of the row whose subtree it is displayed right below (indented to that row's level). hidden = fetched (used as an input to derived rows) but not displayed. derived = not fetched; computed in build_dashboard.py as plus items (or base) minus the listed items, using previous-month relative importance (weights.json) and unrounded SA (MoM) / NSA (YoY) index changes, then chained into an index (first month = 100).",
   "rows": [
     {"code": "SA0", "level": 0, "parent": null, "en": "All items", "zh": "CPI 總指數"},
     {"code": "SAF1", "level": 1, "parent": "SA0", "en": "Food", "zh": "食品"},
@@ -30,10 +30,11 @@
     {"code": "SAEC", "level": 3, "parent": "SACL1E", "en": "Education and communication commodities", "zh": "教育與通訊商品"},
     {"code": "SAF116", "level": 3, "parent": "SACL1E", "en": "Alcoholic beverages", "zh": "酒精飲料"},
     {"code": "SEGA", "level": 3, "parent": "SACL1E", "en": "Tobacco and smoking products", "zh": "菸草"},
-    {"code": "SASLE", "level": 2, "parent": "SA0L1E", "en": "Services less energy services", "zh": "核心服務"},
-    {"code": "SAH1", "level": 3, "parent": "SASLE", "en": "Shelter", "zh": "住房"},
-    {"code": "SEHA", "level": 4, "parent": "SAH1", "en": "Rent of primary residence", "zh": "主要住所租金"},
-    {"code": "SEHC", "level": 4, "parent": "SAH1", "en": "Owners' equivalent rent of residences", "zh": "屋主等價租金 OER"},
+    {"code": "RENTOER", "level": 2, "parent": "SA0L1E", "en": "Core services: rent + OER", "zh": "核心服務（主要住所租金 + OER）", "derived": {"plus": ["SEHA", "SEHC"]}},
+    {"code": "SASLE", "level": 2, "parent": "SA0L1E", "en": "Services less energy services", "zh": "核心服務", "hidden": true},
+    {"code": "SAH1", "level": 3, "parent": "SASLE", "en": "Shelter", "zh": "住房", "hidden": true},
+    {"code": "SEHA", "level": 3, "parent": "RENTOER", "en": "Rent of primary residence", "zh": "主要住所租金"},
+    {"code": "SEHC", "level": 3, "parent": "RENTOER", "en": "Owners' equivalent rent of residences", "zh": "屋主等價租金 OER"},
     {"code": "SUPERCORE", "level": 2, "parent": "SA0L1E", "en": "Supercore services (core services less rent & OER)", "zh": "超級核心服務（核心服務扣除房租與 OER）", "derived": {"base": "SASLE", "minus": ["SEHA", "SEHC"]}},
     {"code": "SEHB", "level": 3, "parent": "SUPERCORE", "en": "Lodging away from home", "zh": "外宿住宿"},
     {"code": "SAM2", "level": 3, "parent": "SUPERCORE", "en": "Medical care services", "zh": "醫療服務"},

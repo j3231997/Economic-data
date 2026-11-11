@@ -231,7 +231,7 @@ function render(ctx) {
     const caret = hasKids ? `<span class='caret' data-id='${r.id}'>${state.collapsed.has(r.id) ? "▸" : "▾"}</span>`
                           : "<span class='caret leaf'></span>";
     const lv = r.special ? (r.after && ctx.byId[r.after] ? ctx.byId[r.after].level : 1) : r.level;
-    h += `<tr class='lv${lv} ${r.special ? "special" : ""}' title='${r.derived ? `計算值：${r.derived.base} − ${r.derived.minus.join(" − ")}（前月權重、未捨入季調 MoM）` : `CUSR0000${r.code} / CUUR0000${r.code}`}'>`;
+    h += `<tr class='lv${lv} ${r.special ? "special" : ""}' title='${r.derived ? `計算值：${r.formula}（前月權重、未捨入季調 MoM）` : `CUSR0000${r.code} / CUUR0000${r.code}`}'>`;
     h += `<td class='name' style='padding-left:${8 + lv * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>${r.useNsa ? "<span class='tag'>NSA</span>" : ""}${r.derived ? "<span class='tag'>計算</span>" : ""}</td>`;
     const m0 = r.mom[latest];
     const edge0 = state.edge && nearEdge(m0);
