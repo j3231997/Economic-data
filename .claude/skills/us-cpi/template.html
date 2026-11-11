@@ -8,8 +8,8 @@
 :root {
   --bg: #f6f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #6b6f76; --line: #e2e2dc; --line-strong: #c9c9c1;
   --head: #eeeee8; --accent: #2f5d8a; --neg: #2f6f9e;
-  --hot: 214, 90, 40;    /* hotter than usual */
-  --cold: 60, 130, 190;  /* cooler than usual */
+  --hot: 214, 48, 40;    /* MoM above 0.2 */
+  --cold: 45, 110, 200;  /* MoM below 0.2 */
   --edge: #b07a00;       /* near a rounding boundary */
   --rowhover: #f3f6fa;
 }
@@ -77,7 +77,7 @@ tr.special td { font-style: italic; }
   <div class="group" id="viewBtns"><span>數值</span></div>
   <div class="group" id="sortBtns"><span>排序</span></div>
   <div class="group">
-    <label class="chk"><input type="checkbox" id="heat" checked> 異常值上色</label>
+    <label class="chk"><input type="checkbox" id="heat" checked> MoM 上色</label>
     <label class="chk"><input type="checkbox" id="edge" checked> 標示進位邊界</label>
     <label class="chk"><input type="checkbox" id="showZh" checked> 中文名稱</label>
   </div>
@@ -87,8 +87,11 @@ tr.special td { font-style: italic; }
   <div class="legend">
     <span>MoM 以季調指數（3 位小數）計算：(本月 ÷ 上月 − 1) × 100；新聞稿公布值為其四捨五入至 1 位小數</span>
     <span>YoY 以未季調指數計算（與官方 12 個月變動一致）</span>
-    <span><span class="sw" style="background:rgba(var(--hot),.55)"></span>MoM 高於該分項期間平均 1 個標準差以上</span>
-    <span><span class="sw" style="background:rgba(var(--cold),.55)"></span>低於 1 個標準差以上</span>
+    <span>上色：MoM 以 0.20% 為中心，
+      <span class="sw" style="background:rgba(var(--cold),.65)"></span>≤ −0.30
+      <span class="sw" style="background:rgba(var(--cold),.25)"></span>&lt; 0.20
+      <span class="sw" style="background:rgba(var(--hot),.25)"></span>&gt; 0.20
+      <span class="sw" style="background:rgba(var(--hot),.65)"></span>≥ 0.70，偏離 0.5 個百分點即最深色（適用 MoM 2位、官方1位、3個月平均）</span>
     <span><u style="text-decoration:underline dotted var(--edge) 2px;text-underline-offset:3px">0.25</u> 兩位小數為 x.x5，官方 1 位小數取決於第三位，可能差一檔</span>
     <span><span class="tag">NSA</span> BLS 未提供季調序列，MoM 改用未季調</span>
     <span><span class="tag">計算</span> 超級核心＝核心服務 − 主要住所租金 − OER（保留旅館住宿等），以前月權重與未捨入季調 MoM 計算，與 Bloomberg CSXHSPCI 口徑一致；指數以首月 = 100 連鎖</span>
@@ -162,12 +165,14 @@ function prepare() {
   return { rows, byId, months, latest, hasWeights, gaps: gaps.reverse() };
 }
 
+// MoM color scale: red above HEAT_CENTER, blue below; deeper the further away, full depth at HEAT_FULL away.
+const HEAT_CENTER = 0.2, HEAT_FULL = 0.5, HEAT_MAX_ALPHA = 0.65;
 function heatStyle(r, v) {
-  if (!state.heat || !["mom2", "mom1"].includes(state.view) || v == null || !r.stat.sd) return "";
-  const z = (v - r.stat.mean) / r.stat.sd;
-  if (Math.abs(z) < 1) return "";
-  const a = Math.min(0.15 + (Math.abs(z) - 1) * 0.3, 0.6).toFixed(2);
-  return `background-color:rgba(var(${z > 0 ? "--hot" : "--cold"}),${a})`;
+  if (!state.heat || !["mom2", "mom1", "avg3"].includes(state.view) || v == null) return "";
+  const d = v - HEAT_CENTER;
+  if (Math.abs(d) < 1e-9) return "";
+  const a = (Math.min(Math.abs(d) / HEAT_FULL, 1) * HEAT_MAX_ALPHA).toFixed(2);
+  return `background-color:rgba(var(${d > 0 ? "--hot" : "--cold"}),${a})`;
 }
 
 function isVisible(r, ctx) {
