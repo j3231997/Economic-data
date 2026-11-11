@@ -29,7 +29,12 @@ description: 收集美國 CPI-U 分項指數，用 3 位小數指數算出兩位
    ```bash
    python3 .claude/skills/us-cpi/scripts/build_dashboard.py --data data/cpi.json --out output/cpi_dashboard.html
    ```
-4. 確認：總指數與核心的「官方 1 位」欄要跟 BLS 新聞稿的季調月增率一致。
+4. 發布分享網頁（使用者要網頁時）：
+   ```bash
+   python3 .claude/skills/us-cpi/scripts/build_dashboard.py --artifact --out <scratchpad>/cpi_artifact.html
+   ```
+   用 Artifact 工具發布這個檔案（去掉 html/head/body 外殼的版本）；之前發布過就更新同一個網址。
+5. 確認：總指數與核心的「官方 1 位」欄要跟 BLS 新聞稿的季調月增率一致。
 
 ## 網頁功能
 
