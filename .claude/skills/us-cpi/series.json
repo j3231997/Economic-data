@@ -34,19 +34,19 @@
     {"code": "SAH1", "level": 3, "parent": "SASLE", "en": "Shelter", "zh": "住房"},
     {"code": "SEHA", "level": 4, "parent": "SAH1", "en": "Rent of primary residence", "zh": "主要住所租金"},
     {"code": "SEHC", "level": 4, "parent": "SAH1", "en": "Owners' equivalent rent of residences", "zh": "屋主等價租金 OER"},
-    {"code": "SEHB", "level": 4, "parent": "SAH1", "en": "Lodging away from home", "zh": "外宿住宿"},
-    {"code": "SAM2", "level": 3, "parent": "SASLE", "en": "Medical care services", "zh": "醫療服務"},
+    {"code": "SUPERCORE", "level": 2, "parent": "SA0L1E", "en": "Supercore services (core services less rent & OER)", "zh": "超級核心服務（核心服務扣除房租與 OER）", "derived": {"base": "SASLE", "minus": ["SEHA", "SEHC"]}},
+    {"code": "SEHB", "level": 3, "parent": "SUPERCORE", "en": "Lodging away from home", "zh": "外宿住宿"},
+    {"code": "SAM2", "level": 3, "parent": "SUPERCORE", "en": "Medical care services", "zh": "醫療服務"},
     {"code": "SEMC01", "level": 4, "parent": "SAM2", "en": "Physicians' services", "zh": "醫師服務"},
     {"code": "SEMD", "level": 4, "parent": "SAM2", "en": "Hospital services", "zh": "醫院服務"},
     {"code": "SEME", "level": 4, "parent": "SAM2", "en": "Health insurance", "zh": "健康保險"},
-    {"code": "SAS4", "level": 3, "parent": "SASLE", "en": "Transportation services", "zh": "運輸服務"},
+    {"code": "SAS4", "level": 3, "parent": "SUPERCORE", "en": "Transportation services", "zh": "運輸服務"},
     {"code": "SETD", "level": 4, "parent": "SAS4", "en": "Motor vehicle maintenance and repair", "zh": "汽車維修"},
     {"code": "SETE", "level": 4, "parent": "SAS4", "en": "Motor vehicle insurance", "zh": "汽車保險"},
     {"code": "SETG01", "level": 4, "parent": "SAS4", "en": "Airline fares", "zh": "機票"},
-    {"code": "SEHG", "level": 3, "parent": "SASLE", "en": "Water and sewer and trash collection services", "zh": "水費與垃圾清運"},
-    {"code": "SARS", "level": 3, "parent": "SASLE", "en": "Recreation services", "zh": "休閒服務"},
-    {"code": "SAES", "level": 3, "parent": "SASLE", "en": "Education and communication services", "zh": "教育與通訊服務"},
-    {"code": "SAGS", "level": 3, "parent": "SASLE", "en": "Other personal services", "zh": "其他個人服務"},
-    {"code": "SUPERCORE", "level": 3, "parent": "SA0", "en": "Supercore: core services less rent & OER", "zh": "超級核心（核心服務扣除房租與 OER）", "special": true, "after": "SAH1", "derived": {"base": "SASLE", "minus": ["SEHA", "SEHC"]}}
+    {"code": "SEHG", "level": 3, "parent": "SUPERCORE", "en": "Water and sewer and trash collection services", "zh": "水費與垃圾清運"},
+    {"code": "SARS", "level": 3, "parent": "SUPERCORE", "en": "Recreation services", "zh": "休閒服務"},
+    {"code": "SAES", "level": 3, "parent": "SUPERCORE", "en": "Education and communication services", "zh": "教育與通訊服務"},
+    {"code": "SAGS", "level": 3, "parent": "SUPERCORE", "en": "Other personal services", "zh": "其他個人服務"}
   ]
 }
