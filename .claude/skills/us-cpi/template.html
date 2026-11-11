@@ -218,11 +218,9 @@ function render(ctx) {
   const W = DATA.weights_as_of ? DATA.weights_as_of.replace("-", "/") : "";
   let h = `<thead><tr class='grp'><th class='name'></th>`;
   if (hasWeights) h += `<th colspan='2'>權重 ${W}</th>`;
-  h += `<th class='${hasWeights ? "sep" : ""}' colspan='4'>最新月 ${L}</th>`;
   h += `<th class='sep' colspan='${months.length}'>${VIEWS[state.view]}</th></tr>`;
   h += "<tr class='cols'><th class='name'>分項</th>";
-  if (hasWeights) h += "<th title='relative importance，占總指數 %'>權重 %</th><th title='權重 × 最新月 MoM ÷ 100（對總指數 MoM 的貢獻，百分點）'>MoM 貢獻 pp</th>";
-  h += `<th class='${hasWeights ? "sep" : ""}'>MoM 2位</th><th>官方 1位</th><th>3M年化</th><th>YoY</th>`;
+  if (hasWeights) h += `<th title='relative importance，占總指數 %'>權重 %</th><th title='權重 × 最新月 MoM ÷ 100（對總指數 MoM 的貢獻，百分點）'>${L} 貢獻 pp</th>`;
   months.forEach((m, i) => { h += `<th class='${i === 0 ? "sep" : ""}'>${m.replace("-", "/")}</th>`; });
   h += "</tr></thead><tbody>";
   rows.forEach(r => {
@@ -233,16 +231,10 @@ function render(ctx) {
     const lv = r.special ? (r.after && ctx.byId[r.after] ? ctx.byId[r.after].level : 1) : r.level;
     h += `<tr class='lv${lv} ${r.special ? "special" : ""}' title='${r.derived ? `計算值：${r.formula}（前月權重、未捨入季調 MoM）` : `CUSR0000${r.code} / CUUR0000${r.code}`}'>`;
     h += `<td class='name' style='padding-left:${8 + lv * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>${r.useNsa ? "<span class='tag'>NSA</span>" : ""}${r.derived ? "<span class='tag'>計算</span>" : ""}</td>`;
-    const m0 = r.mom[latest];
-    const edge0 = state.edge && nearEdge(m0);
     if (hasWeights) {
       h += `<td class='num'>${r.weight != null ? fmt(r.weight, 3) : ""}</td>`;
       h += `<td class='num ${r.contrib < 0 ? "neg" : ""}'>${r.contrib != null ? fmt(r.contrib, 3) : ""}</td>`;
     }
-    h += `<td class='num ${hasWeights ? "sep" : ""} ${m0 < 0 ? "neg" : ""} ${edge0 ? "edge" : ""}'>${fmt(m0, 2)}</td>`;
-    h += `<td class='num ${m0 < 0 ? "neg" : ""}'>${fmt(m0, 1)}</td>`;
-    h += `<td class='num ${r.ann3[latest] < 0 ? "neg" : ""}'>${fmt(r.ann3[latest], 1)}</td>`;
-    h += `<td class='num ${r.yoy[latest] < 0 ? "neg" : ""}'>${fmt(r.yoy[latest], 1)}</td>`;
     months.forEach((m, i) => {
       const v = cellValue(r, m);
       const neg = state.view !== "idx" && v < 0;

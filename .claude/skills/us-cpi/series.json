@@ -30,7 +30,7 @@
     {"code": "SAEC", "level": 3, "parent": "SACL1E", "en": "Education and communication commodities", "zh": "教育與通訊商品"},
     {"code": "SAF116", "level": 3, "parent": "SACL1E", "en": "Alcoholic beverages", "zh": "酒精飲料"},
     {"code": "SEGA", "level": 3, "parent": "SACL1E", "en": "Tobacco and smoking products", "zh": "菸草"},
-    {"code": "RENTOER", "level": 2, "parent": "SA0L1E", "en": "Core services: rent + OER", "zh": "核心服務（主要住所租金 + OER）", "derived": {"plus": ["SEHA", "SEHC"]}},
+    {"code": "RENTOER", "level": 2, "parent": "SA0L1E", "en": "Shelter (rent + OER)", "zh": "住房（主要住所租金 + OER）", "derived": {"plus": ["SEHA", "SEHC"]}},
     {"code": "SASLE", "level": 2, "parent": "SA0L1E", "en": "Services less energy services", "zh": "核心服務", "hidden": true},
     {"code": "SAH1", "level": 3, "parent": "SASLE", "en": "Shelter", "zh": "住房", "hidden": true},
     {"code": "SEHA", "level": 3, "parent": "RENTOER", "en": "Rent of primary residence", "zh": "主要住所租金"},
