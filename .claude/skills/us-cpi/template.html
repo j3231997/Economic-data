@@ -75,6 +75,7 @@ tr.special td { font-style: italic; }
 <div class="controls">
   <div class="group" id="levelBtns"><span>展開至</span></div>
   <div class="group" id="viewBtns"><span>數值</span></div>
+  <div class="group" id="sortBtns"><span>排序</span></div>
   <div class="group">
     <label class="chk"><input type="checkbox" id="heat" checked> 異常值上色</label>
     <label class="chk"><input type="checkbox" id="edge" checked> 標示進位邊界</label>
@@ -90,6 +91,7 @@ tr.special td { font-style: italic; }
     <span><span class="sw" style="background:rgba(var(--cold),.55)"></span>低於 1 個標準差以上</span>
     <span><u style="text-decoration:underline dotted var(--edge) 2px;text-underline-offset:3px">0.25</u> 兩位小數為 x.x5，官方 1 位小數取決於第三位，可能差一檔</span>
     <span><span class="tag">NSA</span> BLS 未提供季調序列，MoM 改用未季調</span>
+    <span>權重 = BLS relative importance（CPI 新聞稿 Table 2，前一個月），同層分項依權重由大到小排序；MoM 貢獻 = 權重 × MoM ÷ 100</span>
   </div>
 </div>
 <script>
@@ -103,7 +105,8 @@ const VIEWS = {
   idx: "指數 (SA)",
 };
 const LEVEL_NAMES = ["總指數", "大類", "中類", "分項", "細項"];
-const state = { view: "mom2", heat: true, edge: true, collapsed: new Set() };
+const SORTS = { weight: "權重大→小", bls: "BLS 原順序" };
+const state = { view: "mom2", sort: "weight", heat: true, edge: true, collapsed: new Set() };
 
 function ymPrev(ym, n = 1) {
   let [y, m] = ym.split("-").map(Number);
@@ -149,12 +152,10 @@ function prepare() {
     }
   });
   const hasWeights = rows.some(r => r.weight != null);
-  // Order: hierarchy first, special aggregates (e.g. supercore) right after All items.
-  const ordered = [rows[0], ...rows.filter(r => r.special), ...rows.slice(1).filter(r => !r.special)];
   // Months with no All items index at all (e.g. 2025-10, not published due to the federal shutdown).
   const all = rows[0].sa, first = Object.keys(all)[0], gaps = [];
   for (let m = latest; m > first; m = ymPrev(m)) if (all[m] == null) gaps.push(m);
-  return { rows: ordered, byId, months, latest, hasWeights, gaps: gaps.reverse() };
+  return { rows, byId, months, latest, hasWeights, gaps: gaps.reverse() };
 }
 
 function heatStyle(r, v) {
@@ -181,14 +182,35 @@ function cellValue(r, m) {
   }
 }
 
+// Depth-first walk of the hierarchy; siblings sorted by weight (desc) or kept in BLS order.
+// Special aggregates (e.g. supercore) sit right after All items.
+function ordered(ctx) {
+  const out = [];
+  const kids = id => {
+    const k = ctx.byId[id].children.map(c => ctx.byId[c]);
+    return state.sort === "weight" ? [...k].sort((a, b) => (b.weight ?? -1) - (a.weight ?? -1)) : k;
+  };
+  const walk = r => { out.push(r); kids(r.id).forEach(walk); };
+  const root = ctx.rows.find(r => r.level === 0 && !r.special);
+  out.push(root);
+  ctx.rows.filter(r => r.special).forEach(r => out.push(r));
+  kids(root.id).forEach(walk);
+  return out;
+}
+
 function render(ctx) {
-  const { rows, months, latest, hasWeights } = ctx;
+  const { months, latest, hasWeights } = ctx;
+  const rows = ordered(ctx);
   const dec = state.view === "mom1" ? 1 : state.view === "idx" ? 3 : 2;
   const L = latest.replace("-", "/");
-  let h = `<thead><tr class='grp'><th class='name'></th><th colspan='${hasWeights ? 5 : 4}'>最新月 ${L}</th>`;
+  const W = DATA.weights_as_of ? DATA.weights_as_of.replace("-", "/") : "";
+  let h = `<thead><tr class='grp'><th class='name'></th>`;
+  if (hasWeights) h += `<th colspan='2'>權重 ${W}</th>`;
+  h += `<th class='${hasWeights ? "sep" : ""}' colspan='4'>最新月 ${L}</th>`;
   h += `<th class='sep' colspan='${months.length}'>${VIEWS[state.view]}</th></tr>`;
-  h += "<tr class='cols'><th class='name'>分項</th><th>MoM 2位</th><th>官方 1位</th><th>3M年化</th><th>YoY</th>";
-  if (hasWeights) h += "<th title='權重 × MoM（百分點）'>貢獻 pp</th>";
+  h += "<tr class='cols'><th class='name'>分項</th>";
+  if (hasWeights) h += "<th title='relative importance，占總指數 %'>權重 %</th><th title='權重 × 最新月 MoM ÷ 100（對總指數 MoM 的貢獻，百分點）'>MoM 貢獻 pp</th>";
+  h += `<th class='${hasWeights ? "sep" : ""}'>MoM 2位</th><th>官方 1位</th><th>3M年化</th><th>YoY</th>`;
   months.forEach((m, i) => { h += `<th class='${i === 0 ? "sep" : ""}'>${m.replace("-", "/")}</th>`; });
   h += "</tr></thead><tbody>";
   rows.forEach(r => {
@@ -201,11 +223,14 @@ function render(ctx) {
     h += `<td class='name' style='padding-left:${8 + lv * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>${r.useNsa ? "<span class='tag'>NSA</span>" : ""}</td>`;
     const m0 = r.mom[latest];
     const edge0 = state.edge && nearEdge(m0);
-    h += `<td class='num ${m0 < 0 ? "neg" : ""} ${edge0 ? "edge" : ""}'>${fmt(m0, 2)}</td>`;
+    if (hasWeights) {
+      h += `<td class='num'>${r.weight != null ? fmt(r.weight, 3) : ""}</td>`;
+      h += `<td class='num ${r.contrib < 0 ? "neg" : ""}'>${r.contrib != null ? fmt(r.contrib, 3) : ""}</td>`;
+    }
+    h += `<td class='num ${hasWeights ? "sep" : ""} ${m0 < 0 ? "neg" : ""} ${edge0 ? "edge" : ""}'>${fmt(m0, 2)}</td>`;
     h += `<td class='num ${m0 < 0 ? "neg" : ""}'>${fmt(m0, 1)}</td>`;
     h += `<td class='num ${r.ann3[latest] < 0 ? "neg" : ""}'>${fmt(r.ann3[latest], 1)}</td>`;
     h += `<td class='num ${r.yoy[latest] < 0 ? "neg" : ""}'>${fmt(r.yoy[latest], 1)}</td>`;
-    if (hasWeights) h += `<td class='num ${r.contrib < 0 ? "neg" : ""}'>${r.contrib != null ? fmt(r.contrib, 3) : ""}</td>`;
     months.forEach((m, i) => {
       const v = cellValue(r, m);
       const neg = state.view !== "idx" && v < 0;
@@ -249,6 +274,14 @@ function init() {
     b.className = "seg"; b.textContent = label; b.setAttribute("aria-pressed", String(k === state.view));
     b.onclick = () => { state.view = k; vb.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(ctx); };
     vb.appendChild(b);
+  });
+  const sb = document.getElementById("sortBtns");
+  if (!ctx.hasWeights) sb.style.display = "none";
+  Object.entries(SORTS).forEach(([k, label]) => {
+    const b = document.createElement("button");
+    b.className = "seg"; b.textContent = label; b.setAttribute("aria-pressed", String(k === state.sort));
+    b.onclick = () => { state.sort = k; sb.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(ctx); };
+    sb.appendChild(b);
   });
   document.getElementById("heat").onchange = e => { state.heat = e.target.checked; render(ctx); };
   document.getElementById("edge").onchange = e => { state.edge = e.target.checked; render(ctx); };

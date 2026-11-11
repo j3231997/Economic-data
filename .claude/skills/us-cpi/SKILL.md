@@ -20,11 +20,15 @@ description: 收集美國 CPI-U 分項指數，用 3 位小數指數算出兩位
    - 若 API 回 `daily threshold ... reached`，代表免金鑰額度已滿，請使用者提供金鑰（不要叫使用者把金鑰貼在對話裡，請他設成環境變數）。
    - 腳本最後會在終端列出最新月份各分項的兩位小數 MoM，可直接引用。
    - `Series does not exist for CUSR0000...` 表示 BLS 沒有季調該分項（目前是 Health insurance `SEME`、Other personal services `SAGS`），MoM 會改用未季調值，網頁上標 `NSA`。
-2. 產生網頁：
+2. 更新權重（每次 CPI 公布後）：用 WebFetch 讀 `https://www.bls.gov/news.release/cpi.t02.htm`（新聞稿 Table 2），取 "Relative importance" 欄（標題是前一個月，例如 10 月 CPI 的表標 Sep. 2026），更新 `weights.json` 的 `as_of`、`release` 與各分項數值。
+   - 不要用 curl 抓 bls.gov 網頁，會被擋（403）；BLS API 也沒有權重。
+   - 超級核心 `SASL2RS` 不在 Table 2，用 (Services less energy services + Energy services) − Rent of shelter 推算。
+   - 驗算：子項加總應約等於母項（例如在家食品 6 項 ≈ Food at home；食品 + 能源 + 核心 ≈ 100）。
+3. 產生網頁（權重在這一步併入，改權重不必重抓指數）：
    ```bash
    python3 .claude/skills/us-cpi/scripts/build_dashboard.py --data data/cpi.json --out output/cpi_dashboard.html
    ```
-3. 確認：總指數與核心的「官方 1 位」欄要跟 BLS 新聞稿的季調月增率一致。
+4. 確認：總指數與核心的「官方 1 位」欄要跟 BLS 新聞稿的季調月增率一致。
 
 ## 網頁功能
 
@@ -33,11 +37,12 @@ description: 收集美國 CPI-U 分項指數，用 3 位小數指數算出兩位
 - 數值切換：MoM 兩位小數、MoM 官方一位小數、3 個月年化、YoY（NSA）、季調指數。
 - 異常值上色：MoM 偏離該分項期間平均 1 個標準差以上時上色（橘 = 偏熱、藍 = 偏冷）。
 - 進位邊界標示：兩位小數剛好是 x.x5（例如 0.35）時加點狀底線，代表官方一位小數取決於第三位（0.345 → 0.3、0.350 → 0.4），公布前預估時要特別注意。
-- 選填權重：在 `series.json` 的列加上 `"weight"`（BLS relative importance，占總指數 %），網頁會多出「貢獻 pp」欄（權重 × MoM）。
+- 權重：顯示 `weights.json` 的 relative importance（占總指數 %），同層分項預設按權重由大到小排序，可切回 BLS 原順序。
+- MoM 貢獻 pp = 權重 × 最新月 MoM ÷ 100，即該分項對總指數 MoM 的百分點貢獻；食品 + 能源 + 核心的貢獻加總 ≈ 總指數 MoM。
 
 ## 分析時注意
 
 - BLS 指數公布到 3 位小數，月增率由指數算出後四捨五入到 1 位小數，所以從指數算出的兩位小數在絕大多數情況下四捨五入後會等於官方值。
 - 每年 2 月公布 1 月 CPI 時，BLS 會修正過去 5 年的季調因子，季調 MoM 會跟著改，所以重抓整段資料，不要只追加最新月。
 - 2025-10 的 CPI 因聯邦政府關門沒有發布（網頁頁首會列出缺漏月份）。因此 2025-11 沒有 MoM，2026-10 起大多數分項沒有 YoY；少數有用其他來源補值的分項（例如汽油、新車）仍有數字。
-- 分項 MoM 用一位小數乘上權重加總不會剛好等於總指數；要拆貢獻度，請用兩位小數值和當期 relative importance。
+- 分項 MoM 用一位小數乘上權重加總不會剛好等於總指數；要拆貢獻度，請用兩位小數值和前一個月的 relative importance（網頁的貢獻欄就是這樣算的）。權重只對最新月有意義，舊月份的貢獻要用當時的權重。
