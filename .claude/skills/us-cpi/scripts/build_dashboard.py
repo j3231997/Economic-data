@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
@@ -82,6 +83,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", default="data/cpi.json")
     ap.add_argument("--out", default="output/cpi_dashboard.html")
+    ap.add_argument("--artifact", action="store_true",
+                    help="write a page body for Artifact publishing (no doctype/html/head/body wrapper)")
     args = ap.parse_args()
 
     data = json.loads(Path(args.data).read_text(encoding="utf-8"))
@@ -122,7 +125,14 @@ def main() -> None:
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(html.replace(PLACEHOLDER, payload), encoding="utf-8")
+    html = html.replace(PLACEHOLDER, payload)
+    if args.artifact:
+        # The Artifact host adds its own doctype/head/body skeleton: keep <title>, <style> and the body content.
+        head = re.search(r"<head>(.*?)</head>", html, re.S).group(1)
+        head = "\n".join(re.findall(r"<title>.*?</title>|<style>.*?</style>", head, re.S))
+        body = re.search(r"<body>(.*)</body>", html, re.S).group(1)
+        html = head + "\n" + body
+    out.write_text(html, encoding="utf-8")
     print(f"Wrote {out}")
 
 
