@@ -1,5 +1,5 @@
 {
-  "_note": "CPI-U relative importance (% of All items), U.S. city average, copied from the 'Relative importance' column of BLS CPI news release Table 2 (https://www.bls.gov/news.release/cpi.t02.htm). That column is the previous month's relative importance, which is the correct weight for the current month's change. Update as_of + weights after each CPI release. SASL2RS (supercore) is not listed in Table 2: it is derived as (Services less energy services + Energy services) - Rent of shelter.",
+  "_note": "CPI-U relative importance (% of All items), U.S. city average, copied from the 'Relative importance' column of BLS CPI news release Table 2 (https://www.bls.gov/news.release/cpi.t02.htm). That column is the previous month's relative importance, which is the correct weight for the current month's change. Update as_of + weights after each CPI release. Derived rows (e.g. SUPERCORE) take base weight minus the excluded items. anchors = extra relative-importance snapshots (BLS annual December table) used to back/forward-cast monthly weights for history: RI_m = RI_anchor x (I_m / I_anchor) / (AllItems_m / AllItems_anchor), NSA indexes.",
   "as_of": "2026-09",
   "release": "2026-10",
   "weights": {
@@ -17,7 +17,9 @@
     "SAH1": 35.238, "SEHA": 7.707, "SEHC": 25.853, "SEHB": 1.392,
     "SAM2": 6.813, "SEMC01": 1.648, "SEMD": 2.163, "SEME": 0.811,
     "SAS4": 6.256, "SETD": 1.065, "SETE": 2.510, "SETG01": 1.055,
-    "SEHG": 1.143, "SARS": 3.127, "SAES": 5.007, "SAGS": 1.597,
-    "SASL2RS": 28.391
+    "SEHG": 1.143, "SARS": 3.127, "SAES": 5.007, "SAGS": 1.597
+  },
+  "anchors": {
+    "2025-12": {"SASLE": 60.744, "SEHA": 7.840, "SEHC": 26.204}
   }
 }

@@ -91,6 +91,7 @@ tr.special td { font-style: italic; }
     <span><span class="sw" style="background:rgba(var(--cold),.55)"></span>低於 1 個標準差以上</span>
     <span><u style="text-decoration:underline dotted var(--edge) 2px;text-underline-offset:3px">0.25</u> 兩位小數為 x.x5，官方 1 位小數取決於第三位，可能差一檔</span>
     <span><span class="tag">NSA</span> BLS 未提供季調序列，MoM 改用未季調</span>
+    <span><span class="tag">計算</span> 超級核心＝核心服務 − 主要住所租金 − OER（保留旅館住宿等），以前月權重與未捨入季調 MoM 計算，與 Bloomberg CSXHSPCI 口徑一致；指數以首月 = 100 連鎖</span>
     <span>權重 = BLS relative importance（CPI 新聞稿 Table 2，前一個月），同層分項依權重由大到小排序；MoM 貢獻 = 權重 × MoM ÷ 100</span>
   </div>
 </div>
@@ -230,8 +231,8 @@ function render(ctx) {
     const caret = hasKids ? `<span class='caret' data-id='${r.id}'>${state.collapsed.has(r.id) ? "▸" : "▾"}</span>`
                           : "<span class='caret leaf'></span>";
     const lv = r.special ? (r.after && ctx.byId[r.after] ? ctx.byId[r.after].level : 1) : r.level;
-    h += `<tr class='lv${lv} ${r.special ? "special" : ""}' title='CUSR0000${r.code} / CUUR0000${r.code}'>`;
-    h += `<td class='name' style='padding-left:${8 + lv * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>${r.useNsa ? "<span class='tag'>NSA</span>" : ""}</td>`;
+    h += `<tr class='lv${lv} ${r.special ? "special" : ""}' title='${r.derived ? `計算值：${r.derived.base} − ${r.derived.minus.join(" − ")}（前月權重、未捨入季調 MoM）` : `CUSR0000${r.code} / CUUR0000${r.code}`}'>`;
+    h += `<td class='name' style='padding-left:${8 + lv * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>${r.useNsa ? "<span class='tag'>NSA</span>" : ""}${r.derived ? "<span class='tag'>計算</span>" : ""}</td>`;
     const m0 = r.mom[latest];
     const edge0 = state.edge && nearEdge(m0);
     if (hasWeights) {

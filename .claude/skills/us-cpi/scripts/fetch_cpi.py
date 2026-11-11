@@ -109,7 +109,7 @@ def main() -> None:
     base = month_back(start, 12)  # 12 months back so YoY and 6m annualized exist from `start`
     end_year = dt.date.today().year
 
-    rows = load_rows()
+    rows = [r for r in load_rows() if "derived" not in r]  # derived rows are computed in build_dashboard.py
     key = os.environ.get("BLS_API_KEY") or None
     ids = [SA + r["code"] for r in rows] + [NSA + r["code"] for r in rows]
     print(f"Fetching {len(ids)} CPI series {base:%Y-%m}..present ({'v2 with key' if key else 'v1, no key'})", file=sys.stderr)

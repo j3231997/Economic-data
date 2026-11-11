@@ -8,7 +8,7 @@ description: 收集美國 CPI-U 分項指數，用 3 位小數指數算出兩位
 資料來源：BLS CPI-U，U.S. city average。
 - **MoM**：季調指數 `CUSR0000<item>`，(本月 ÷ 上月 − 1) × 100，取兩位小數。BLS 新聞稿只公布一位小數，這裡的兩位小數就是市場說的「unrounded」值。
 - **YoY**：未季調指數 `CUUR0000<item>`（官方 12 個月變動就是用未季調值算的）。
-- 分項階層依 CPI 新聞稿 Table 2/3：總指數 → 食品 / 能源 / 核心 → 核心商品、核心服務 → 住房（Rent、OER、Lodging）、醫療服務、運輸服務等。另外列出超級核心（Services less rent of shelter，`SASL2RS`）。定義在 `series.json`，要增減分項改那個檔即可。
+- 分項階層依 CPI 新聞稿 Table 2/3：總指數 → 食品 / 能源 / 核心 → 核心商品、核心服務 → 住房（Rent、OER、Lodging）、醫療服務、運輸服務等。另外列出超級核心（見下方「超級核心算法」）。定義在 `series.json`，要增減分項改那個檔即可。
 
 ## 步驟
 
@@ -22,7 +22,8 @@ description: 收集美國 CPI-U 分項指數，用 3 位小數指數算出兩位
    - `Series does not exist for CUSR0000...` 表示 BLS 沒有季調該分項（目前是 Health insurance `SEME`、Other personal services `SAGS`），MoM 會改用未季調值，網頁上標 `NSA`。
 2. 更新權重（每次 CPI 公布後）：用 WebFetch 讀 `https://www.bls.gov/news.release/cpi.t02.htm`（新聞稿 Table 2），取 "Relative importance" 欄（標題是前一個月，例如 10 月 CPI 的表標 Sep. 2026），更新 `weights.json` 的 `as_of`、`release` 與各分項數值。
    - 不要用 curl 抓 bls.gov 網頁，會被擋（403）；BLS API 也沒有權重。
-   - 超級核心 `SASL2RS` 不在 Table 2，用 (Services less energy services + Energy services) − Rent of shelter 推算。
+   - 超級核心不在 Table 2，權重由核心服務 − Rent − OER 自動算出，不用手動填。
+   - `anchors` 放 BLS 每年 12 月 relative importance 表（`https://www.bls.gov/cpi/tables/relative-importance/<年>.htm`）中 SASLE、SEHA、SEHC 的值，用來推算歷史月份的權重；每年 1 月指數公布後補上新一年的 12 月值。
    - 驗算：子項加總應約等於母項（例如在家食品 6 項 ≈ Food at home；食品 + 能源 + 核心 ≈ 100）。
 3. 產生網頁（權重在這一步併入，改權重不必重抓指數）：
    ```bash
@@ -39,6 +40,18 @@ description: 收集美國 CPI-U 分項指數，用 3 位小數指數算出兩位
 - 進位邊界標示：兩位小數剛好是 x.x5（例如 0.35）時加點狀底線，代表官方一位小數取決於第三位（0.345 → 0.3、0.350 → 0.4），公布前預估時要特別注意。
 - 權重：顯示 `weights.json` 的 relative importance（占總指數 %），同層分項預設按權重由大到小排序，可切回 BLS 原順序。
 - MoM 貢獻 pp = 權重 × 最新月 MoM ÷ 100，即該分項對總指數 MoM 的百分點貢獻；食品 + 能源 + 核心的貢獻加總 ≈ 總指數 MoM。
+
+## 超級核心算法
+
+口徑與 Bloomberg `CSXHSPCI` 相同：**核心服務（SASLE）扣除主要住所租金（SEHA）與 OER（SEHC）**，旅館住宿、房屋保險等其他住房項目仍保留在內。BLS 沒有公布這個指數，由 `build_dashboard.py` 自行計算：
+
+g = (w_s·g_s − w_r·g_r − w_o·g_o) ÷ (w_s − w_r − w_o)
+
+- g：各分項季調指數的未捨入 MoM（完整精度，不先四捨五入）。
+- w：**前一個月**的 relative importance。最新月直接用 Table 2 的值；歷史月份用 RI_m = RI_錨點 × (I_m ÷ I_錨點) ÷ (總指數_m ÷ 總指數_錨點)（未季調指數）從錨點推算。
+- 逐月連鎖成指數（首月 = 100），所以網頁的指數水準和 Bloomberg 不同，但 MoM 相同。YoY 用同樣方法、改用未季調指數計算。
+- 驗證：2026-07～10 算出 0.189 / 0.5095 / 0.4224 / 0.3995%，與 Bloomberg 的 0.19 / 0.51 / 0.42 / 0.40% 一致。
+- BLS 的 `SASL2RS`（Services less rent of shelter）含能源服務與房屋保險，口徑不同，不要拿來當超級核心。
 
 ## 分析時注意
 
