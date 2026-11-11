@@ -23,6 +23,17 @@ def main() -> None:
     args = ap.parse_args()
 
     data = json.loads(Path(args.data).read_text(encoding="utf-8"))
+    # Layout (order, level, parent, names, pinning) comes from the current series.json, so it can be
+    # edited without re-fetching; index values come from the data file.
+    by_code = {r["code"]: r for r in data["rows"]}
+    rows = []
+    for meta in json.loads((SKILL_DIR / "series.json").read_text(encoding="utf-8"))["rows"]:
+        old = by_code.get(meta["code"])
+        if old is None:
+            print(f"WARNING: {meta['code']} is in series.json but not in the data file; re-run fetch_cpi.py")
+            continue
+        rows.append({**meta, "sa": old.get("sa", {}), "nsa": old.get("nsa", {})})
+    data["rows"] = rows
     # Relative importance lives in weights.json so it can be refreshed without re-fetching the indexes.
     if WEIGHTS.exists():
         w = json.loads(WEIGHTS.read_text(encoding="utf-8"))

@@ -1,5 +1,5 @@
 {
-  "_note": "CPI-U U.S. city average item hierarchy, following the BLS CPI news release Table 2/3 grouping. code = BLS item code; the fetcher builds CUSR0000<code> (seasonally adjusted, used for MoM) and CUUR0000<code> (not seasonally adjusted, used for YoY). level 0 = All items; parent = code of the parent row. Edit this file to add/remove rows. weight is optional (relative importance, % of All items) — fill it from the BLS relative importance table to enable the contribution view.",
+  "_note": "CPI-U U.S. city average item hierarchy, following the BLS CPI news release Table 2/3 grouping. code = BLS item code; the fetcher builds CUSR0000<code> (seasonally adjusted, used for MoM) and CUUR0000<code> (not seasonally adjusted, used for YoY). level 0 = All items; parent = code of the parent row. Edit this file to add/remove rows. weight is optional (relative importance, % of All items) — fill it from the BLS relative importance table to enable the contribution view. special = aggregate outside the tree (not a child of parent); after = code of the row whose subtree it is displayed right below (indented to that row's level).",
   "rows": [
     {"code": "SA0", "level": 0, "parent": null, "en": "All items", "zh": "CPI 總指數"},
     {"code": "SAF1", "level": 1, "parent": "SA0", "en": "Food", "zh": "食品"},
@@ -47,6 +47,6 @@
     {"code": "SARS", "level": 3, "parent": "SASLE", "en": "Recreation services", "zh": "休閒服務"},
     {"code": "SAES", "level": 3, "parent": "SASLE", "en": "Education and communication services", "zh": "教育與通訊服務"},
     {"code": "SAGS", "level": 3, "parent": "SASLE", "en": "Other personal services", "zh": "其他個人服務"},
-    {"code": "SASL2RS", "level": 1, "parent": "SA0", "en": "Services less rent of shelter (Supercore)", "zh": "超級核心（服務扣除住房租金）", "special": true}
+    {"code": "SASL2RS", "level": 3, "parent": "SA0", "en": "Services less rent of shelter (Supercore)", "zh": "超級核心（服務扣除住房租金）", "special": true, "after": "SAH1"}
   ]
 }

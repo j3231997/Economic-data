@@ -167,7 +167,12 @@ function heatStyle(r, v) {
 }
 
 function isVisible(r, ctx) {
-  if (r.special) return true;
+  if (r.special) {
+    // Pinned aggregate: shown wherever its anchor row is shown (top-level if no anchor).
+    if (!r.after) return true;
+    const a = ctx.byId[r.after];
+    return !!a && isVisible(a, ctx);
+  }
   let p = r.parent;
   while (p) { if (state.collapsed.has(p)) return false; p = ctx.byId[p].parent; }
   return true;
@@ -183,17 +188,23 @@ function cellValue(r, m) {
 }
 
 // Depth-first walk of the hierarchy; siblings sorted by weight (desc) or kept in BLS order.
-// Special aggregates (e.g. supercore) sit right after All items.
+// Special aggregates (e.g. supercore) sit right below the subtree of their `after` row
+// (e.g. Shelter), or right after All items when no anchor is given.
 function ordered(ctx) {
   const out = [];
   const kids = id => {
     const k = ctx.byId[id].children.map(c => ctx.byId[c]);
     return state.sort === "weight" ? [...k].sort((a, b) => (b.weight ?? -1) - (a.weight ?? -1)) : k;
   };
-  const walk = r => { out.push(r); kids(r.id).forEach(walk); };
+  const pinned = ctx.rows.filter(r => r.special && r.after && ctx.byId[r.after]);
+  const walk = r => {
+    out.push(r);
+    kids(r.id).forEach(walk);
+    pinned.filter(p => p.after === r.id).forEach(p => out.push(p));
+  };
   const root = ctx.rows.find(r => r.level === 0 && !r.special);
   out.push(root);
-  ctx.rows.filter(r => r.special).forEach(r => out.push(r));
+  ctx.rows.filter(r => r.special && !pinned.includes(r)).forEach(r => out.push(r));
   kids(root.id).forEach(walk);
   return out;
 }
@@ -218,7 +229,7 @@ function render(ctx) {
     const hasKids = r.children.length > 0;
     const caret = hasKids ? `<span class='caret' data-id='${r.id}'>${state.collapsed.has(r.id) ? "▸" : "▾"}</span>`
                           : "<span class='caret leaf'></span>";
-    const lv = r.special ? 1 : r.level;
+    const lv = r.special ? (r.after && ctx.byId[r.after] ? ctx.byId[r.after].level : 1) : r.level;
     h += `<tr class='lv${lv} ${r.special ? "special" : ""}' title='CUSR0000${r.code} / CUUR0000${r.code}'>`;
     h += `<td class='name' style='padding-left:${8 + lv * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>${r.useNsa ? "<span class='tag'>NSA</span>" : ""}</td>`;
     const m0 = r.mom[latest];
