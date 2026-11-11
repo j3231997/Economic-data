@@ -8,19 +8,23 @@
 :root {
   --bg: #f6f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #6b6f76; --line: #e2e2dc; --line-strong: #c9c9c1;
   --head: #eeeee8; --accent: #2f5d8a; --neg: #b3261e;
-  --hot: 232, 120, 40;   /* large positive surprise */
-  --cold: 70, 150, 90;   /* large negative surprise */
+  --hot: 232, 120, 40;   /* L3 top 3 net gain in the period */
+  --cold: 70, 150, 90;   /* L3 bottom 3 */
   --rowhover: #f3f6fa;
+  --ai-build: #fbe1df;   /* benefits from AI build-out */
+  --ai-risk: #dde9f8;    /* exposed to AI substitution */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
     --head: #24282d; --accent: #8db8e0; --neg: #ff8a80; --rowhover: #23282f;
+    --ai-build: #4a2a2a; --ai-risk: #243650;
   }
 }
 :root[data-theme="dark"] {
   --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
   --head: #24282d; --accent: #8db8e0; --neg: #ff8a80; --rowhover: #23282f;
+  --ai-build: #4a2a2a; --ai-risk: #243650;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink);
@@ -51,6 +55,8 @@ td.sep, th.sep { border-left: 1px solid var(--line-strong); }
 tbody tr:hover td { background-color: var(--rowhover); }
 tbody tr:hover td.heat { filter: brightness(0.97); }
 td.neg { color: var(--neg); }
+td.name.ai-build { background: var(--ai-build); }
+td.name.ai-risk { background: var(--ai-risk); }
 .lv0 td { font-weight: 700; } .lv1 td { font-weight: 700; } .lv2 td { font-weight: 600; }
 .lv0 td, .lv1 td { border-top: 1px solid var(--line-strong); }
 .caret { display: inline-block; width: 16px; text-align: center; cursor: pointer; color: var(--muted); user-select: none; }
@@ -73,15 +79,20 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
   <div class="group" id="levelBtns"><span>展開至</span></div>
   <div class="group" id="viewBtns"><span>數值</span></div>
   <div class="group">
-    <label class="chk"><input type="checkbox" id="heat" checked> 異常值上色</label>
+    <label class="chk"><input type="checkbox" id="heat" checked> 民間超級產業前/後 3 名上色</label>
+    <label class="chk"><input type="checkbox" id="showAi" checked> AI 影響標示</label>
     <label class="chk"><input type="checkbox" id="showZh" checked> 中文名稱</label>
   </div>
 </div>
 <div class="wrap">
   <div class="scroller"><table id="tbl"></table></div>
   <div class="legend">
-    <span><span class="sw" style="background:rgba(var(--hot),.55)"></span>高於該產業期間平均 1 個標準差以上</span>
-    <span><span class="sw" style="background:rgba(var(--cold),.55)"></span>低於 1 個標準差以上</span>
+    <span><span class="sw" style="background:rgba(var(--hot),.45)"></span>該月民間超級產業（L3）淨增加前 3 名</span>
+    <span><span class="sw" style="background:rgba(var(--cold),.45)"></span>後 3 名</span>
+    <span>（MoM 與 3 個月平均各自排名；同值並列）</span>
+    <span>正數黑字、<span style="color:var(--neg)">負數紅字</span></span>
+    <span><span class="sw" style="background:var(--ai-build);outline:1px solid var(--line-strong)"></span>產業名稱淡紅：受惠 AI 建置</span>
+    <span><span class="sw" style="background:var(--ai-risk);outline:1px solid var(--line-strong)"></span>產業名稱淡藍：易被 AI 取代</span>
     <span><b style="color:var(--accent)">P</b> 初值（preliminary），後續兩個月會修正</span>
     <span>點擊產業名稱前的 ▸ / ▾ 可個別展開或收合</span>
   </div>
@@ -90,8 +101,9 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
 const DATA = /*__NFP_DATA__*/null;
 
 const VIEWS = { mom: "MoM 變化 (千人)", avg3: "3個月平均 (千人)", level: "就業人數 (千人)" };
-const LEVEL_NAMES = ["總數", "民間 / 政府", "部門", "超級產業", "細產業"];
-const state = { view: "mom", heat: true, collapsed: new Set() };
+const LEVEL_NAMES = ["總數", "民間 / 政府", "部門", "超級產業", "細產業", "次細產業"];
+const state = { view: "mom", heat: true, ai: true, collapsed: new Set() };
+const AI_TIP = { build: "受惠 AI 建置", risk: "易被 AI 取代" };
 
 function ymPrev(ym, n = 1) {
   let [y, m] = ym.split("-").map(Number);
@@ -113,7 +125,10 @@ function prepare() {
   const prelim = new Set(rows.flatMap(r => r.prelim || []));
   const latest = months[0];
   const total = byId["CES0000000001"];
-  const years = [...new Set(months.map(m => m.slice(0, 4)))].sort().reverse();
+  // Yearly change columns: Dec-to-Dec from DATA.annual_from, current year = YTD. Newest first.
+  const firstYear = +(DATA.annual_from || DATA.start.slice(0, 4));
+  const years = [];
+  for (let y = +latest.slice(0, 4); y >= firstYear; y--) years.push(String(y));
   rows.forEach(r => {
     const L = r.levels;
     r.mom = {}; r.avg3 = {};
@@ -125,26 +140,37 @@ function prepare() {
     });
     r.ytd = {};
     years.forEach(y => {
-      const last = months.find(m => m.startsWith(y));
+      const last = Object.keys(L).filter(m => m.startsWith(y)).sort().pop();   // Dec, or latest month this year
       const base = `${+y - 1}-12`;
-      if (last && L[last] != null && L[base] != null) r.ytd[y] = L[last] - L[base];
+      if (last && L[base] != null) r.ytd[y] = L[last] - L[base];
     });
-    const vals = Object.values(r.mom);
-    const mean = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
-    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(vals.length - 1, 1));
-    r.stat = { mean, sd };
     r.latestLevel = L[latest];
-    r.share = total && total.levels[latest] ? L[latest] / total.levels[latest] : null;
+    r.share = L[latest] != null && total && total.levels[latest] ? L[latest] / total.levels[latest] : null;
   });
-  return { rows, byId, months, prelim, latest, years };
+  // Per month, the private-sector L3 supersectors (under Total private) with the 3 largest and
+  // 3 smallest values (ties at the cutoff included). Government L3 rows are not ranked.
+  const underPrivate = r => { for (let p = r.parent; p; p = byId[p].parent) if (p === "CES0500000001") return true; return false; };
+  rows.forEach(r => { r.ranked = r.level === 3 && underPrivate(r); });
+  const l3 = rows.filter(r => r.ranked);
+  const rank = {};
+  ["mom", "avg3"].forEach(k => {
+    rank[k] = {};
+    months.forEach(m => {
+      const vals = l3.map(r => r[k][m]).filter(v => v != null).sort((a, b) => b - a);
+      if (vals.length < 6) return;
+      rank[k][m] = { hi: vals[2], lo: vals[vals.length - 3] };
+    });
+  });
+  return { rows, byId, months, prelim, latest, years, rank };
 }
 
-function heatStyle(r, v) {
-  if (!state.heat || state.view !== "mom" || v == null || !r.stat.sd) return "";
-  const z = (v - r.stat.mean) / r.stat.sd;
-  if (Math.abs(z) < 1) return "";
-  const a = Math.min(0.15 + (Math.abs(z) - 1) * 0.3, 0.6).toFixed(2);
-  return `background-color:rgba(var(${z > 0 ? "--hot" : "--cold"}),${a})`;
+function heatStyle(ctx, r, m, v) {
+  if (!state.heat || !r.ranked || v == null) return "";
+  const cut = (ctx.rank[state.view] || {})[m];
+  if (!cut) return "";
+  if (v >= cut.hi) return "background-color:rgba(var(--hot),.45)";
+  if (v <= cut.lo) return "background-color:rgba(var(--cold),.45)";
+  return "";
 }
 
 function isVisible(r, ctx) {
@@ -154,20 +180,21 @@ function isVisible(r, ctx) {
 }
 
 function render(ctx) {
-  const { rows, months, prelim, years } = ctx;
-  const showYtd = state.view === "mom";
+  const { rows, months, prelim, years, latest } = ctx;
+  const showYtd = state.view !== "level";
   const valueOf = (r, m) => state.view === "mom" ? r.mom[m] : state.view === "avg3" ? r.avg3[m] : r.levels[m];
   const dec = state.view === "avg3" ? 0 : state.view === "level" ? 0 : 0;
   let h = "<thead><tr class='grp'><th class='name'></th><th colspan='2'>總數</th>";
-  if (showYtd) h += `<th class='sep' colspan='${years.length}'>累計 (千人)</th>`;
-  h += `<th class='sep' colspan='${months.length}'>${VIEWS[state.view]}</th></tr>`;
+  h += `<th class='sep' colspan='${months.length}'>${VIEWS[state.view]}</th>`;
+  if (showYtd) h += `<th class='sep' colspan='${years.length}'>年度累計 (千人，12 月對前一年 12 月)</th>`;
+  h += "</tr>";
   h += "<tr class='cols'><th class='name'>產業</th><th>目前 Payroll (百萬)</th><th>占比</th>";
-  if (showYtd) years.forEach((y, i) => {
-    const last = months.find(m => m.startsWith(y));
-    h += `<th class='${i === 0 ? "sep" : ""}'>${y}${last && last.slice(5) !== "12" ? " YTD" : ""}</th>`;
-  });
   months.forEach((m, i) => {
     h += `<th class='${i === 0 ? "sep" : ""}'>${m.replace("-", "/")}${prelim.has(m) ? "<span class='p' title='preliminary 初值'>P</span>" : ""}</th>`;
+  });
+  if (showYtd) years.forEach((y, i) => {
+    const ytd = y === latest.slice(0, 4) && latest.slice(5) !== "12";
+    h += `<th class='${i === 0 ? "sep" : ""}'>${y}${ytd ? " YTD" : ""}</th>`;
   });
   h += "</tr></thead><tbody>";
   rows.forEach(r => {
@@ -176,18 +203,19 @@ function render(ctx) {
     const caret = hasKids ? `<span class='caret' data-id='${r.id}'>${state.collapsed.has(r.id) ? "▸" : "▾"}</span>`
                           : "<span class='caret leaf'></span>";
     h += `<tr class='lv${r.level}' title='${r.id}'>`;
-    h += `<td class='name' style='padding-left:${8 + r.level * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span></td>`;
+    const ai = state.ai && r.ai ? ` ai-${r.ai}` : "";
+    h += `<td class='name${ai}' style='padding-left:${8 + r.level * 18}px'${ai ? ` title='${AI_TIP[r.ai]}'` : ""}>${caret}${r.en}<span class='zh'>${r.zh}</span></td>`;
     h += `<td class='num'>${r.latestLevel != null ? fmt(r.latestLevel / 1000, 1) : ""}</td>`;
     h += `<td class='num'>${r.share != null ? Math.round(r.share * 100) + "%" : ""}</td>`;
-    if (showYtd) years.forEach((y, i) => {
-      const v = r.ytd[y];
-      h += `<td class='num ${i === 0 ? "sep" : ""} ${v < 0 ? "neg" : ""}'>${fmt(v)}</td>`;
-    });
     months.forEach((m, i) => {
       const v = valueOf(r, m);
-      const neg = state.view !== "level" && v < 0;
-      const st = heatStyle(r, v);
+      const neg = v != null && Math.round(v) < 0;   // a value shown as "0" stays black
+      const st = heatStyle(ctx, r, m, v);
       h += `<td class='num ${i === 0 ? "sep" : ""} ${neg ? "neg" : ""} ${st ? "heat" : ""}' style='${st}'>${fmt(v, dec)}</td>`;
+    });
+    if (showYtd) years.forEach((y, i) => {
+      const v = r.ytd[y];
+      h += `<td class='num ${i === 0 ? "sep" : ""} ${v != null && Math.round(v) < 0 ? "neg" : ""}'>${fmt(v)}</td>`;
     });
     h += "</tr>";
   });
@@ -226,6 +254,7 @@ function init() {
     vb.appendChild(b);
   });
   document.getElementById("heat").onchange = e => { state.heat = e.target.checked; render(ctx); };
+  document.getElementById("showAi").onchange = e => { state.ai = e.target.checked; render(ctx); };
   document.getElementById("showZh").onchange = e => document.body.classList.toggle("hide-zh", !e.target.checked);
   document.getElementById("tbl").addEventListener("click", e => {
     const id = e.target.dataset && e.target.dataset.id;
