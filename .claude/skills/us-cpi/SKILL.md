@@ -14,7 +14,7 @@ description: 收集美國 CPI-U 分項指數，用 3 位小數指數算出兩位
 
 1. 抓資料（需要網路可連 `api.bls.gov`）：
    ```bash
-   python3 .claude/skills/us-cpi/scripts/fetch_cpi.py --start 2025-01 --out data/cpi.json
+   python3 .claude/skills/us-cpi/scripts/fetch_cpi.py --start 2025-01 --out cpi/data/cpi.json
    ```
    - 每個分項抓季調和未季調兩條，約 94 條序列。有 `BLS_API_KEY` 環境變數時用 v2 API（一次 50 條，2 次請求）；沒有則用 v1（一次 25 條，4 次請求，每天 25 次額度、共用 IP 很容易用完）。
    - 若 API 回 `daily threshold ... reached`，代表免金鑰額度已滿，請使用者提供金鑰（不要叫使用者把金鑰貼在對話裡，請他設成環境變數）。
@@ -27,7 +27,7 @@ description: 收集美國 CPI-U 分項指數，用 3 位小數指數算出兩位
    - 驗算：子項加總應約等於母項（例如在家食品 6 項 ≈ Food at home；食品 + 能源 + 核心 ≈ 100）。
 3. 產生網頁（權重在這一步併入，改權重不必重抓指數）：
    ```bash
-   python3 .claude/skills/us-cpi/scripts/build_dashboard.py --data data/cpi.json --out output/cpi_dashboard.html
+   python3 .claude/skills/us-cpi/scripts/build_dashboard.py --data cpi/data/cpi.json --out cpi/output/cpi_dashboard.html
    ```
 4. 發布分享網頁（使用者要網頁時）：
    ```bash

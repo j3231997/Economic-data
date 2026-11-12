@@ -6,7 +6,7 @@ All Employees levels (thousands) for every row, and writes a JSON file that
 build_dashboard.py turns into the interactive web page.
 
 Usage:
-    python3 fetch_ces.py [--start 2025-01] [--annual-from 2019] [--out data/nfp_ces.json]
+    python3 fetch_ces.py [--start 2025-01] [--annual-from 2019] [--out nfp/data/nfp_ces.json]
 
 Monthly levels are kept from 3 months before --start; for the yearly change
 columns, the December level of every year from (--annual-from - 1) is kept too.
@@ -80,7 +80,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--start", default="2025-01", help="first month to show MoM change for (YYYY-MM)")
     ap.add_argument("--annual-from", type=int, default=2019, help="first year to show the Dec-to-Dec yearly change for")
-    ap.add_argument("--out", default="data/nfp_ces.json", help="output JSON path")
+    ap.add_argument("--out", default="nfp/data/nfp_ces.json", help="output JSON path")
     args = ap.parse_args()
 
     start = dt.date.fromisoformat(args.start + "-01")

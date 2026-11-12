@@ -2,7 +2,7 @@
 """Render the NFP data JSON (from fetch_ces.py) into a single self-contained HTML page.
 
 Usage:
-    python3 build_dashboard.py [--data data/nfp_ces.json] [--out output/nfp_dashboard.html]
+    python3 build_dashboard.py [--data nfp/data/nfp_ces.json] [--out nfp/output/nfp_dashboard.html]
 """
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ PLACEHOLDER = "/*__NFP_DATA__*/null"
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--data", default="data/nfp_ces.json")
-    ap.add_argument("--out", default="output/nfp_dashboard.html")
+    ap.add_argument("--data", default="nfp/data/nfp_ces.json")
+    ap.add_argument("--out", default="nfp/output/nfp_dashboard.html")
     args = ap.parse_args()
 
     data = json.loads(Path(args.data).read_text(encoding="utf-8"))
