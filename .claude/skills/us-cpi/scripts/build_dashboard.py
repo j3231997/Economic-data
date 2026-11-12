@@ -2,7 +2,7 @@
 """Render the CPI data JSON (from fetch_cpi.py) into a single self-contained HTML page.
 
 Usage:
-    python3 build_dashboard.py [--data data/cpi.json] [--out output/cpi_dashboard.html]
+    python3 build_dashboard.py [--data cpi/data/cpi.json] [--out cpi/output/cpi_dashboard.html]
 """
 from __future__ import annotations
 
@@ -81,8 +81,8 @@ def compute_derived(row: dict, rows: dict, weights: dict) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--data", default="data/cpi.json")
-    ap.add_argument("--out", default="output/cpi_dashboard.html")
+    ap.add_argument("--data", default="cpi/data/cpi.json")
+    ap.add_argument("--out", default="cpi/output/cpi_dashboard.html")
     ap.add_argument("--artifact", action="store_true",
                     help="write a page body for Artifact publishing (no doctype/html/head/body wrapper)")
     args = ap.parse_args()

@@ -12,14 +12,14 @@ description: 收集並整理美國非農就業（NFP / BLS CES）產業別逐月
 
 1. 抓資料（需要網路可連 `api.bls.gov`）：
    ```bash
-   python3 .claude/skills/us-nfp/scripts/fetch_ces.py --start 2025-01 --annual-from 2019 --out data/nfp_ces.json
+   python3 .claude/skills/us-nfp/scripts/fetch_ces.py --start 2025-01 --annual-from 2019 --out nfp/data/nfp_ces.json
    ```
    - 有 `BLS_API_KEY` 環境變數時用 v2 API（一次 50 檔、每日 500 次）；沒有則用 v1（一次 25 檔、每日 25 次，共用 IP 很容易用完）。
    - 若 API 回 `daily threshold ... reached`，代表免金鑰額度已滿，請使用者提供金鑰（不要叫使用者把金鑰貼在對話裡，請他設成環境變數）。
    - 腳本會列出沒有回傳資料的 series ID，若有，檢查 `series.json` 中代碼是否因 NAICS 改版而變動。
 2. 產生網頁：
    ```bash
-   python3 .claude/skills/us-nfp/scripts/build_dashboard.py --data data/nfp_ces.json --out output/nfp_dashboard.html
+   python3 .claude/skills/us-nfp/scripts/build_dashboard.py --data nfp/data/nfp_ces.json --out nfp/output/nfp_dashboard.html
    ```
 3. 確認：最新月份與 BLS Employment Situation 公布值一致（Total nonfarm MoM），最近兩個月應標示 P（初值）。
 

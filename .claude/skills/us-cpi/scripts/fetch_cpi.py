@@ -10,7 +10,7 @@ to 1 decimal. This script keeps the 3-decimal indexes so the dashboard can show 
 "unrounded" 2-decimal MoM that markets watch.
 
 Usage:
-    python3 fetch_cpi.py [--start 2025-01] [--out data/cpi.json]
+    python3 fetch_cpi.py [--start 2025-01] [--out cpi/data/cpi.json]
 
 API key:
     Set BLS_API_KEY (free: https://data.bls.gov/registrationEngine/).
@@ -102,7 +102,7 @@ def month_back(d: dt.date, n: int) -> dt.date:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--start", default="2025-01", help="first month to show MoM for (YYYY-MM)")
-    ap.add_argument("--out", default="data/cpi.json", help="output JSON path")
+    ap.add_argument("--out", default="cpi/data/cpi.json", help="output JSON path")
     args = ap.parse_args()
 
     start = dt.date.fromisoformat(args.start + "-01")
