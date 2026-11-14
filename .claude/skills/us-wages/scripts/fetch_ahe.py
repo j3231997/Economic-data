@@ -2,7 +2,8 @@
 """Fetch CES average hourly earnings (all employees) from the BLS Public Data API.
 
 Reads the industry hierarchy from ../series.json, downloads seasonally adjusted average
-hourly earnings of all employees (dollars, 2 decimals) for every row, and writes a JSON file
+hourly earnings of all employees (dollars, 2 decimals) for every row, plus the matching CES all-employee levels (data type 01, thousands) for the
+wage-vs-payrolls comparison, and writes a JSON file
 that build_dashboard.py turns into the interactive web page. MoM % is computed in the page
 from the dollar levels, so it carries 2 decimals instead of the news release's 1.
 
@@ -14,8 +15,8 @@ All months from January of (--annual-from - 1) are kept (and at least 13 months 
 
 API key:
     Set BLS_API_KEY (free: https://data.bls.gov/registrationEngine/).
-    With a key the v2 API is used (50 series/request): 2 requests.
-    Without a key the v1 API is used (25 series/request, 25 requests/day): 3 requests.
+    With a key the v2 API is used (50 series/request): 3 requests.
+    Without a key the v1 API is used (25 series/request, 25 requests/day): 6 requests.
 
 Only the Python standard library is used.
 """
@@ -87,7 +88,8 @@ def main() -> None:
     rows = json.loads((SKILL_DIR / "series.json").read_text(encoding="utf-8"))["rows"]
     key = os.environ.get("BLS_API_KEY") or None
     print(f"Fetching {len(rows)} AHE series {first_year}..present ({'v2 with key' if key else 'v1, no key'})", file=sys.stderr)
-    raw = fetch([r["id"] for r in rows], first_year, end_year, key)
+    emp_id = lambda sid: sid[:-2] + "01"   # same industry, all employees (thousands)
+    raw = fetch([r["id"] for r in rows] + [emp_id(r["id"]) for r in rows], first_year, end_year, key)
 
     missing = []
     for r in rows:
@@ -105,11 +107,19 @@ def main() -> None:
             missing.append(r["id"])
         r["levels"] = dict(sorted(levels.items()))
         r["prelim"] = sorted(prelim)
+        nfp = {}
+        for d in raw.get(emp_id(r["id"]), []):
+            ym = f'{d["year"]}-{d["period"][1:]}'
+            if d["period"].startswith("M") and d["period"] != "M13" and ym >= first and d["value"] not in ("-", ""):
+                nfp[ym] = float(d["value"])
+        if not nfp:
+            missing.append(emp_id(r["id"]))
+        r["nfp"] = dict(sorted(nfp.items()))
     if missing:
         print(f"WARNING: no data for {len(missing)} series: {', '.join(missing)}", file=sys.stderr)
 
     out = {
-        "source": "U.S. Bureau of Labor Statistics, Current Employment Statistics (CES), average hourly earnings of all employees, seasonally adjusted, dollars",
+        "source": "U.S. Bureau of Labor Statistics, Current Employment Statistics (CES), average hourly earnings of all employees (dollars) and all-employee payrolls (thousands), seasonally adjusted",
         "fetched_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "start": f"{start:%Y-%m}",
         "annual_from": args.annual_from,

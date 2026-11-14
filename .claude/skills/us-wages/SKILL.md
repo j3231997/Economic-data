@@ -5,7 +5,7 @@ description: 收集美國 CES 平均時薪（Average hourly earnings, all employ
 
 # 美國平均時薪 MoM
 
-資料來源：BLS Current Employment Statistics（CES），全體員工平均時薪（All employees，data type `03`），季調後，美元。
+資料來源：BLS Current Employment Statistics（CES），全體員工平均時薪（All employees，data type `03`），季調後，美元；另抓同產業就業人數（data type `01`）做時薪 vs NFP 對照。
 - 產業階層與 us-nfp 相同，但以 Total private 為 L0（政府沒有時薪資料），並拿掉 BLS 沒有季調時薪的 Finance and insurance、Real estate、Private educational services（所以 Financial activities 是末端列，Private education and health 底下只有醫療）。定義在 `series.json`；`ai` 欄位沿用 NFP 的 AI 影響標示。
 - **MoM**：(本月時薪 ÷ 上月 − 1) × 100，取兩位小數。BLS 新聞稿只公布一位小數，這裡的兩位小數就是市場說的 unrounded AHE。時薪本身只公布到美分，所以兩位小數已是公開資料能算到的最高精度。
 
@@ -15,7 +15,7 @@ description: 收集美國 CES 平均時薪（Average hourly earnings, all employ
    ```bash
    python3 .claude/skills/us-wages/scripts/fetch_ahe.py --start 2025-01 --annual-from 2019 --out wages/data/ahe.json
    ```
-   - 有 `BLS_API_KEY` 環境變數時用 v2 API（一次 50 條，2 次請求）；沒有則用 v1（一次 25 條，3 次請求，每天 25 次額度）。
+   - 有 `BLS_API_KEY` 環境變數時用 v2 API（一次 50 條，3 次請求）；沒有則用 v1（一次 25 條，6 次請求，每天 25 次額度）。
    - 若 API 回 `daily threshold ... reached`，請使用者把金鑰設成環境變數（不要貼在對話裡）。
    - 腳本最後會列出民間總時薪近 6 個月的兩位小數與一位小數 MoM，可直接引用。
 2. 產生網頁：
@@ -35,6 +35,13 @@ description: 收集美國 CES 平均時薪（Average hourly earnings, all employ
 - MoM 上色：以 0.30% 為中心，高於用紅色、低於用藍色，偏離 0.5 個百分點（≥ 0.80% 或 ≤ −0.20%）為最深色；套用在 MoM 2 位、官方 1 位、3 個月平均三種檢視。門檻在 template.html 的 `HEAT_CENTER`、`HEAT_FULL`。
 - 進位邊界標示：兩位小數剛好是 x.x5 時加點狀底線，代表官方一位小數取決於第三位。
 - 年度欄（最右邊）：12 月對前一年 12 月的 %，當年為 YTD（未年化）。
+- 時薪 vs NFP 對照（頁面下方）：每個產業過去 6 個月各分一類，顯示的產業跟著上方表格的展開階層。時薪用 3 個月平均 MoM（幾何平均）；NFP 用 (本月 − 3 個月前) ÷ 3 再除以 3 個月前水準換成 %，兩者都以兩位小數判斷、達到門檻才算明顯。門檻預設時薪 ≥ 0.40% 加速、≤ 0.20% 放緩（以 0.30% 為中心 ±0.10，因為時薪每月本來就會漲），NFP ±0.05%/月，網頁上可調。
+  1. 時薪加速、NFP 增加 → 需求強勁（加薪搶人）
+  2. 時薪加速、NFP 持平或下降 → 缺工（也可能是低薪職位減少拉高平均的組成效果）
+  3. 時薪不加速、NFP 增加 → 供給充足（不必加薪也招得到人）
+  4. 時薪放緩、NFP 不增；或時薪持平、NFP 下降 → 需求疲弱
+  5. 時薪持平、NFP 持平 → 不明顯
+  NFP 是同一產業代碼的 CES 就業人數（series ID 尾碼 03 換成 01），由 fetch_ahe.py 一起抓。類別旁的數字是民間 10 個超級產業最新月落在該類的個數。
 - 「展開至 L0–L4」一鍵切換階層，預設 L2 超級產業；每列 ▸/▾ 可個別展開收合。AI 影響標示同 NFP。
 
 ## 分析時注意

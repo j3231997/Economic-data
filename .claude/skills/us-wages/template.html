@@ -70,6 +70,23 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
 .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; }
 .ramp { display: inline-block; width: 90px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 4px;
   background: linear-gradient(90deg, rgba(var(--cold),.65), rgba(var(--cold),0) 50%, rgba(var(--hot),0) 50%, rgba(var(--hot),.65)); outline: 1px solid var(--line); }
+/* Wage vs payrolls classes */
+:root { --q1: 214, 72, 40; --q2: 140, 90, 200; --q3: 60, 150, 90; --q4: 80, 110, 160; }
+.cmp { margin-top: 28px; }
+.cmp h2 { font-size: 17px; margin: 0 0 4px; }
+.cmp .sub { margin-bottom: 8px; max-width: 900px; }
+.cmp .controls { padding: 6px 0; max-width: none; }
+.cmp input[type=number] { width: 64px; font: inherit; font-size: 12.5px; padding: 2px 4px; border: 1px solid var(--line-strong);
+  border-radius: 4px; background: var(--panel); color: var(--ink); }
+.qkey { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; padding: 4px 0 10px; }
+.qkey > span { display: flex; align-items: center; gap: 6px; }
+.chip { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.chip.q1 { background: rgba(var(--q1), .28); } .chip.q2 { background: rgba(var(--q2), .28); }
+.chip.q3 { background: rgba(var(--q3), .28); } .chip.q4 { background: rgba(var(--q4), .28); }
+.chip.q5 { color: var(--muted); border: 1px solid var(--line-strong); font-weight: 400; }
+td.q { text-align: center; min-width: 96px; }
+td.q .nums { display: block; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.qcount { color: var(--muted); font-weight: 400; margin-left: 2px; }
 .empty { padding: 40px; text-align: center; color: var(--muted); }
 @media (max-width: 640px) { th.name, td.name { min-width: 190px; } .zh { display: none; } }
 </style>
@@ -100,6 +117,26 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
     <span><b style="color:var(--accent)">P</b> 初值（preliminary），後續兩個月會修正</span>
     <span>點擊產業名稱前的 ▸ / ▾ 可個別展開或收合</span>
   </div>
+  <section class="cmp">
+    <h2>時薪 vs NFP 對照（3 個月平均，過去 6 個月）</h2>
+    <div class="sub">時薪用 3 個月平均 MoM（近 3 個月幾何平均）；NFP 用 (本月 − 3 個月前) ÷ 3，再除以 3 個月前的水準換成 %。
+      時薪每月本來就會漲，所以「加速 / 放緩」是跟中心值比，不是跟 0 比。以畫面顯示的兩位小數達到門檻才算明顯。
+      顯示的產業跟著上方表格的展開階層。</div>
+    <div class="controls">
+      <div class="group"><span>門檻</span>
+        <label class="chk">時薪 ≥<input type="number" id="thHi" step="0.01" value="0.40">% 加速</label>
+        <label class="chk">≤<input type="number" id="thLo" step="0.01" value="0.20">% 放緩</label>
+        <label class="chk">NFP ±<input type="number" id="thN" step="0.01" min="0" value="0.05">%/月</label>
+      </div>
+    </div>
+    <div class="qkey" id="qkey"></div>
+    <div class="scroller"><table id="cmpTbl"></table></div>
+    <div class="legend">
+      <span>格內小字：時薪 % / NFP %（每月，3 個月平均）；滑鼠移上去看美分與千人數</span>
+      <span>缺工也可能是組成效果：低薪職位減少，會把平均時薪拉高</span>
+      <span>類別旁的數字：民間 10 個超級產業在最新月落在該類的個數</span>
+    </div>
+  </section>
 </div>
 <script>
 const DATA = /*__AHE_DATA__*/null;
@@ -220,6 +257,66 @@ function render(ctx) {
   });
   h += "</tbody>";
   document.getElementById("tbl").innerHTML = h;
+  renderCmp(ctx);
+}
+
+// ---- Wage vs payrolls: classify each industry by 3-month average wage MoM and payroll change. ----
+const QUAD = {
+  1: { name: "需求強勁（加薪搶人）", short: "需求強勁", rule: "時薪加速、NFP 增加" },
+  2: { name: "缺工", short: "缺工", rule: "時薪加速、NFP 持平或下降" },
+  3: { name: "供給充足（不必加薪也招得到人）", short: "供給充足", rule: "時薪不加速、NFP 增加" },
+  4: { name: "需求疲弱", short: "需求疲弱", rule: "時薪放緩、NFP 不增；或時薪持平、NFP 下降" },
+  5: { name: "不明顯", short: "不明顯", rule: "時薪持平、NFP 持平" },
+};
+function classify(w, n, hi, lo, thN) {
+  const r2 = v => Math.round(v * 100) / 100, e = 1e-9;
+  w = r2(w); n = r2(n);
+  const dw = w >= hi - e ? 1 : w <= lo + e ? -1 : 0, dn = n >= thN - e ? 1 : n <= -thN + e ? -1 : 0;
+  if (dw === 1) return dn === 1 ? 1 : 2;
+  if (dn === 1) return 3;
+  if (dw === -1 || dn === -1) return 4;
+  return 5;
+}
+function renderCmp(ctx) {
+  if (!document.getElementById("cmpTbl")) return;
+  const num = id => parseFloat(document.getElementById(id).value);
+  const hi = num("thHi"), lo = num("thLo"), thN = Math.abs(num("thN")) || 0;
+  const months = ctx.months.slice(0, 6), latest = months[0];
+  const sign = (v, d) => { const t = fmt(v, d); return /^-/.test(t) || /^0(\.0+)?$/.test(t) ? t : "+" + t; };
+  const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const cellsOf = r => months.map(m => {
+    const p3 = ymPrev(m, 3), W = r.levels, N = r.nfp || {};
+    if (W[m] == null || W[p3] == null || N[m] == null || N[p3] == null) return null;
+    const w = r.v.avg3[m], c = (W[m] - W[p3]) / 3 * 100, nk = (N[m] - N[p3]) / 3, n = nk / N[p3] * 100;
+    const q = classify(w, n, hi, lo, thN);
+    if (m === latest && r.level === 2) counts[q]++;
+    return { q, w, c, nk, n };
+  });
+  let body = "";
+  ctx.rows.forEach(r => {
+    const cs = cellsOf(r);
+    if (!isVisible(r, ctx)) return;
+    const c0 = cs[0];
+    const td = (v, d) => `<td class='num ${v != null && Math.round(v * 10 ** d) < 0 ? "neg" : ""}'>${v == null ? "" : sign(v, d)}</td>`;
+    body += `<tr class='lv${r.level}'><td class='name' style='padding-left:${8 + r.level * 18}px'>${r.en}<span class='zh'>${r.zh}</span></td>`;
+    body += (c0 ? `<td class='num sep'>${fmt(c0.w, 2)}</td>` : "<td class='num sep'></td>") + td(c0 && c0.nk, 1) + td(c0 && c0.n, 2);
+    cs.forEach((c, i) => {
+      if (!c) { body += `<td class='q ${i === 0 ? "sep" : ""}'></td>`; return; }
+      const tip = `${months[i]}｜時薪 ${fmt(c.w, 2)}%/月 (${sign(c.c, 1)}¢/月)｜NFP ${sign(c.nk, 1)}k/月 (${sign(c.n, 2)}%)`;
+      body += `<td class='q ${i === 0 ? "sep" : ""}' title='${tip}'><span class='chip q${c.q}'>${QUAD[c.q].short}</span>` +
+              `<span class='nums'>${fmt(c.w, 2)} / ${sign(c.n, 2)}</span></td>`;
+    });
+    body += "</tr>";
+  });
+  let h = "<thead><tr class='grp'><th class='name'></th><th class='sep' colspan='3'>" + latest.replace("-", "/") + " 3 個月平均</th>" +
+          "<th class='sep' colspan='" + months.length + "'>分類</th></tr><tr class='cols'><th class='name'>產業</th>" +
+          "<th class='sep'>時薪 MoM %</th><th>NFP (千/月)</th><th>NFP %</th>";
+  months.forEach((m, i) => {
+    h += `<th class='${i === 0 ? "sep" : ""}' style='text-align:center'>${m.replace("-", "/")}${ctx.prelim.has(m) ? "<span class='p' title='preliminary 初值'>P</span>" : ""}</th>`;
+  });
+  document.getElementById("cmpTbl").innerHTML = h + "</tr></thead><tbody>" + body + "</tbody>";
+  document.getElementById("qkey").innerHTML = [1, 2, 3, 4, 5].map(q =>
+    `<span><span class='chip q${q}'>${QUAD[q].short}<span class='qcount'>${counts[q]}</span></span>${q}) ${QUAD[q].rule} → ${QUAD[q].name}</span>`).join("");
 }
 
 function setLevel(ctx, n) {
@@ -268,6 +365,7 @@ function init() {
     syncLevelBtns(-1);
     render(ctx);
   });
+  ["thHi", "thLo", "thN"].forEach(id => document.getElementById(id).addEventListener("input", () => renderCmp(ctx)));
   setLevel(ctx, 2);
 }
 init();
