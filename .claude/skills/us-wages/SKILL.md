@@ -26,7 +26,7 @@ description: 收集美國 CES 平均時薪（Average hourly earnings, all employ
    ```bash
    python3 .claude/skills/us-wages/scripts/build_dashboard.py --artifact --out <scratchpad>/ahe_artifact.html
    ```
-   用 Artifact 工具發布這個檔案；之前發布過就更新同一個網址。
+   用 Artifact 工具發布這個檔案，並傳 `url`: https://claude.ai/artifact/CWqCGD6vxvPiCCuPfG6buV 更新同一個網址（不要建立新的）。
 4. 確認：Total private 的「官方 1 位」要跟 Employment Situation 新聞稿的時薪月增率一致。
 
 ## 網頁功能

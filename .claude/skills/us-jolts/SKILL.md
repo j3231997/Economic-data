@@ -27,7 +27,7 @@ description: 收集並整理美國 JOLTS（職缺 Job openings、招聘、自願
    ```bash
    python3 .claude/skills/us-jolts/scripts/build_dashboard.py --artifact --out <scratchpad>/jolts_artifact.html
    ```
-   用 Artifact 工具發布這個檔案；之前發布過就更新同一個網址。
+   用 Artifact 工具發布這個檔案，並傳 `url`: https://claude.ai/artifact/Kop8CZDuqe7wExvaQbjP62 更新同一個網址（不要建立新的）。
 4. 確認：總非農職缺水準與職缺率要跟 BLS JOLTS 新聞稿一致。
 
 ## 網頁功能
