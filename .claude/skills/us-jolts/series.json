@@ -1,0 +1,40 @@
+{
+  "_note": "JOLTS industry hierarchy (BLS jt.industry). level 0 = Total nonfarm. parent = industry code of the parent row. Series IDs are built as JTS + industry(6) + state 00 + area 00000 + size class 00 + data element(2) + L/R (level in thousands / rate in %), seasonally adjusted. elements lists the data elements fetched; the dashboard shows each one.",
+  "elements": [
+    {"code": "JO", "en": "Job openings",       "zh": "職缺"},
+    {"code": "HI", "en": "Hires",              "zh": "招聘"},
+    {"code": "QU", "en": "Quits",              "zh": "自願離職"},
+    {"code": "LD", "en": "Layoffs and discharges", "zh": "裁員與解僱"},
+    {"code": "TS", "en": "Total separations",  "zh": "總離職"}
+  ],
+  "rows": [
+    {"code": "000000", "level": 0, "parent": null,     "en": "Total nonfarm",                                  "zh": "非農總數"},
+    {"code": "100000", "level": 1, "parent": "000000", "en": "Total private",                                  "zh": "民間部門"},
+    {"code": "110099", "level": 2, "parent": "100000", "en": "Mining and logging",                             "zh": "採礦與伐木"},
+    {"code": "230000", "level": 2, "parent": "100000", "en": "Construction",                                   "zh": "營建"},
+    {"code": "300000", "level": 2, "parent": "100000", "en": "Manufacturing",                                  "zh": "製造業"},
+    {"code": "320000", "level": 3, "parent": "300000", "en": "Durable goods manufacturing",                    "zh": "耐久財製造"},
+    {"code": "340000", "level": 3, "parent": "300000", "en": "Nondurable goods manufacturing",                 "zh": "非耐久財製造"},
+    {"code": "400000", "level": 2, "parent": "100000", "en": "Trade, transportation, and utilities",           "zh": "貿易、運輸與公用事業"},
+    {"code": "420000", "level": 3, "parent": "400000", "en": "Wholesale trade",                                "zh": "批發"},
+    {"code": "440000", "level": 3, "parent": "400000", "en": "Retail trade",                                   "zh": "零售"},
+    {"code": "480099", "level": 3, "parent": "400000", "en": "Transportation, warehousing, and utilities",     "zh": "運輸、倉儲與公用事業"},
+    {"code": "510000", "level": 2, "parent": "100000", "en": "Information",                                    "zh": "資訊"},
+    {"code": "510099", "level": 2, "parent": "100000", "en": "Financial activities",                           "zh": "金融活動"},
+    {"code": "520000", "level": 3, "parent": "510099", "en": "Finance and insurance",                          "zh": "金融與保險"},
+    {"code": "530000", "level": 3, "parent": "510099", "en": "Real estate and rental and leasing",             "zh": "不動產與租賃"},
+    {"code": "540099", "level": 2, "parent": "100000", "en": "Professional and business services",             "zh": "專業與商業服務"},
+    {"code": "600000", "level": 2, "parent": "100000", "en": "Private education and health services",          "zh": "民間教育與醫療"},
+    {"code": "610000", "level": 3, "parent": "600000", "en": "Private educational services",                   "zh": "民間教育服務"},
+    {"code": "620000", "level": 3, "parent": "600000", "en": "Health care and social assistance",              "zh": "醫療保健與社會救助"},
+    {"code": "700000", "level": 2, "parent": "100000", "en": "Leisure and hospitality",                        "zh": "休閒與旅宿"},
+    {"code": "710000", "level": 3, "parent": "700000", "en": "Arts, entertainment, and recreation",            "zh": "藝術、娛樂與休閒"},
+    {"code": "720000", "level": 3, "parent": "700000", "en": "Accommodation and food services",                "zh": "住宿與餐飲"},
+    {"code": "810000", "level": 2, "parent": "100000", "en": "Other services",                                 "zh": "其他服務"},
+    {"code": "900000", "level": 1, "parent": "000000", "en": "Government",                                     "zh": "政府部門"},
+    {"code": "910000", "level": 2, "parent": "900000", "en": "Federal",                                        "zh": "聯邦政府"},
+    {"code": "920000", "level": 2, "parent": "900000", "en": "State and local",                                "zh": "州與地方政府"},
+    {"code": "923000", "level": 3, "parent": "920000", "en": "State and local government education",           "zh": "州與地方政府教育"},
+    {"code": "929000", "level": 3, "parent": "920000", "en": "State and local government, excluding education", "zh": "州與地方政府（不含教育）"}
+  ]
+}
