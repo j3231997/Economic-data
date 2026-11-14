@@ -2,8 +2,10 @@
 """Fetch JOLTS (Job Openings and Labor Turnover Survey) data from the BLS Public Data API.
 
 Reads the industry hierarchy and data elements from ../series.json, downloads seasonally
-adjusted levels (thousands) and rates (%) for every industry x element, plus the CPS number
-of unemployed (LNS13000000) for the unemployed-per-opening ratio, and writes a JSON file that
+adjusted levels (thousands) and rates (%) for every industry x element, the CPS number
+of unemployed (LNS13000000) for the unemployed-per-opening ratio, and the CES (NFP)
+employment levels listed under "ces" for each industry (summed when more than one) for the
+openings-vs-payrolls comparison, and writes a JSON file that
 build_dashboard.py turns into the interactive web page.
 
 Usage:
@@ -14,8 +16,8 @@ averages and Dec-to-Dec changes) and the 3-month averages from --start on can be
 
 API key:
     Set BLS_API_KEY (free: https://data.bls.gov/registrationEngine/).
-    With a key the v2 API is used (50 series/request, 500 requests/day): 6 requests.
-    Without a key the v1 API is used (25 series/request, 25 requests/day): 12 requests,
+    With a key the v2 API is used (50 series/request, 500 requests/day): 7 requests.
+    Without a key the v1 API is used (25 series/request, 25 requests/day): 13 requests,
     and v1 only returns up to 10 years.
 
 Only the Python standard library is used.
@@ -109,6 +111,8 @@ def main() -> None:
     cfg = json.loads((SKILL_DIR / "series.json").read_text(encoding="utf-8"))
     rows, elements = cfg["rows"], cfg["elements"]
     ids = [series_id(r["code"], e["code"], k) for r in rows for e in elements for k in "LR"] + [UNEMPLOYED]
+    ces_ids = sorted({c for r in rows for c in r.get("ces", [])})
+    ids += ces_ids
     key = os.environ.get("BLS_API_KEY") or None
     print(f"Fetching {len(ids)} series {first_year}..present ({'v2 with key' if key else 'v1, no key'})", file=sys.stderr)
     raw = fetch(ids, first_year, end_year, key)
@@ -126,6 +130,15 @@ def main() -> None:
                 entry[name] = vals
                 prelim_all.update(prelim)
             r["data"][e["code"]] = entry
+        # NFP employment for the same industry: sum of the listed CES series, only for months all of them have.
+        parts = [parse(raw.get(c, []), first) for c in r.get("ces", [])]
+        for c, (vals, _) in zip(r.get("ces", []), parts):
+            if not vals:
+                missing.append(c)
+        if parts:
+            common = set.intersection(*(set(v) for v, _ in parts))
+            r["nfp"] = {m: round(sum(v[m] for v, _ in parts), 1) for m in sorted(common)}
+            r["nfp_prelim"] = sorted(set.union(*(set(p) for _, p in parts)) & common)
     unemployed, _ = parse(raw.get(UNEMPLOYED, []), first)
     if not unemployed:
         missing.append(UNEMPLOYED)
@@ -133,7 +146,7 @@ def main() -> None:
         print(f"WARNING: no data for {len(missing)} series: {', '.join(missing)}", file=sys.stderr)
 
     out = {
-        "source": "U.S. Bureau of Labor Statistics, Job Openings and Labor Turnover Survey (JOLTS), seasonally adjusted; unemployed from CPS (LNS13000000)",
+        "source": "U.S. Bureau of Labor Statistics, Job Openings and Labor Turnover Survey (JOLTS), seasonally adjusted; unemployed from CPS (LNS13000000); payrolls from CES",
         "fetched_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "start": f"{start:%Y-%m}",
         "annual_from": args.annual_from,

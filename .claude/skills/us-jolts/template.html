@@ -68,6 +68,23 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
 .card .v { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .card .d { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .card .d .neg { color: var(--neg); }
+/* Openings vs payrolls quadrant classes */
+:root { --q1: 214, 72, 40; --q2: 60, 150, 90; --q3: 140, 90, 200; --q4: 80, 110, 160; }
+.cmp { margin-top: 28px; }
+.cmp h2 { font-size: 17px; margin: 0 0 4px; }
+.cmp .sub { margin-bottom: 8px; max-width: 900px; }
+.cmp .controls { padding: 6px 0; max-width: none; }
+.cmp input[type=number] { width: 64px; font: inherit; font-size: 12.5px; padding: 2px 4px; border: 1px solid var(--line-strong);
+  border-radius: 4px; background: var(--panel); color: var(--ink); }
+.qkey { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; padding: 4px 0 10px; }
+.qkey > span { display: flex; align-items: center; gap: 6px; }
+.chip { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.chip.q1 { background: rgba(var(--q1), .28); } .chip.q2 { background: rgba(var(--q2), .28); }
+.chip.q3 { background: rgba(var(--q3), .28); } .chip.q4 { background: rgba(var(--q4), .28); }
+.chip.q5 { color: var(--muted); border: 1px solid var(--line-strong); font-weight: 400; }
+td.q { text-align: center; min-width: 96px; }
+td.q .nums { display: block; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.qcount { color: var(--muted); font-weight: 400; margin-left: 2px; }
 </style>
 </head>
 <body>
@@ -96,6 +113,24 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
     <span><b style="color:var(--accent)">P</b> 初值（preliminary），下個月會修正</span>
     <span>點擊產業名稱前的 ▸ / ▾ 可個別展開或收合</span>
   </div>
+  <section class="cmp">
+    <h2>職缺 vs NFP 對照（3 個月平均，過去 6 個月）</h2>
+    <div class="sub">職缺與 NFP 都用近 3 個月平均每月變化：(本月 − 3 個月前) ÷ 3，再除以 3 個月前的水準換成 %，產業大小不同也能比。
+      以畫面顯示的數字（職缺 1 位、NFP 2 位小數）達到門檻才算「明顯」上升或下降。月份以 JOLTS 最新月為準。</div>
+    <div class="controls">
+      <div class="group"><span>明顯門檻</span>
+        <label class="chk">職缺 ±<input type="number" id="thJ" step="0.1" min="0" value="1.5">%/月</label>
+        <label class="chk">NFP ±<input type="number" id="thN" step="0.01" min="0" value="0.05">%/月</label>
+      </div>
+    </div>
+    <div class="qkey" id="qkey"></div>
+    <div class="scroller"><table id="cmpTbl"></table></div>
+    <div class="legend">
+      <span>格內小字：職缺 % / NFP %（每月，3 個月平均）；滑鼠移上去看千人數</span>
+      <span>持平的情況歸到最接近的類別：職缺持平 + NFP 增加 → 有成交；職缺持平 + NFP 下降、職缺下降 + NFP 持平 → 慘淡</span>
+      <span>類別旁的數字：民間 10 個超級產業在最新月落在該類的個數</span>
+    </div>
+  </section>
 </div>
 <script>
 const DATA = /*__JOLTS_DATA__*/null;
@@ -259,6 +294,69 @@ function render(ctx) {
   document.getElementById("tbl").innerHTML = h;
 }
 
+// ---- Openings vs payrolls: classify each industry by the 3-month average monthly change of both. ----
+const QUAD = {
+  1: { name: "聘僱需求超級好", short: "需求超強", rule: "職缺明顯上升、NFP 增加" },
+  2: { name: "有成交", short: "有成交", rule: "職缺不升、NFP 增加" },
+  3: { name: "找不到人", short: "找不到人", rule: "職缺上升、NFP 不變或下降" },
+  4: { name: "該行業慘淡", short: "慘淡", rule: "職缺不升、NFP 下降（或職缺下降、NFP 持平）" },
+  5: { name: "變化不明顯", short: "不明顯", rule: "職缺與 NFP 都持平" },
+};
+function avg3pct(L, m) {
+  const b = L[ymPrev(m, 3)];
+  if (L[m] == null || b == null || !b) return null;
+  const k = (L[m] - b) / 3;
+  return { k, pct: k / b * 100 };
+}
+// Compared at display precision (openings 1 decimal, NFP 2 decimals); reaching the threshold counts as clear.
+function classify(j, n, thJ, thN) {
+  const r = (v, d) => Math.round(v * 10 ** d) / 10 ** d, e = 1e-9;
+  j = r(j, 1); n = r(n, 2);
+  const dj = j >= thJ - e ? 1 : j <= -thJ + e ? -1 : 0, dn = n >= thN - e ? 1 : n <= -thN + e ? -1 : 0;
+  if (dj === 1) return dn === 1 ? 1 : 3;
+  if (dn === 1) return 2;
+  if (dn === -1 || dj === -1) return 4;
+  return 5;
+}
+function renderCmp(ctx) {
+  const thJ = Math.abs(parseFloat(document.getElementById("thJ").value)) || 0;
+  const thN = Math.abs(parseFloat(document.getElementById("thN").value)) || 0;
+  const months = ctx.months.slice(0, 6), latest = months[0];
+  const sign = (v, d) => fmt(v, d, true);
+  const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const cells = r => months.map(m => {
+    const j = avg3pct(r.data.JO.level, m), n = avg3pct(r.nfp || {}, m);
+    if (!j || !n) return null;
+    const q = classify(j.pct, n.pct, thJ, thN);
+    if (m === latest && r.ranked) counts[q]++;
+    return { q, j, n };
+  });
+  const rowsHtml = ctx.rows.map(r => {
+    const cs = cells(r), c0 = cs[0];
+    let h = `<tr class='lv${r.level}'><td class='name' style='padding-left:${8 + r.level * 18}px'>${r.en}<span class='zh'>${r.zh}</span></td>`;
+    const num = (v, d) => `<td class='num ${v != null && Math.round(v * 10 ** d) < 0 ? "neg" : ""}'>${v == null ? "" : sign(v, d)}</td>`;
+    h += num(c0 && c0.j.k, 0) + num(c0 && c0.j.pct, 1) + num(c0 && c0.n.k, 1) + num(c0 && c0.n.pct, 2);
+    cs.forEach((c, i) => {
+      if (!c) { h += `<td class='q ${i === 0 ? "sep" : ""}'></td>`; return; }
+      const tip = `${months[i]}｜職缺 ${sign(c.j.k, 0)}k/月 (${sign(c.j.pct, 1)}%)｜NFP ${sign(c.n.k, 1)}k/月 (${sign(c.n.pct, 2)}%)`;
+      h += `<td class='q ${i === 0 ? "sep" : ""}' title='${tip}'><span class='chip q${c.q}'>${QUAD[c.q].short}</span>` +
+           `<span class='nums'>${sign(c.j.pct, 1)} / ${sign(c.n.pct, 2)}</span></td>`;
+    });
+    return h + "</tr>";
+  }).join("");
+  const nfpP = new Set(ctx.rows[0].nfp_prelim || []);
+  let h = "<thead><tr class='grp'><th class='name'></th><th class='sep' colspan='4'>" + latest.replace("-", "/") + " 3 個月平均每月變化</th>" +
+          "<th class='sep' colspan='" + months.length + "'>分類</th></tr><tr class='cols'><th class='name'>產業</th>" +
+          "<th class='sep'>職缺 (千)</th><th>職缺 %</th><th>NFP (千)</th><th>NFP %</th>";
+  months.forEach((m, i) => {
+    const p = ctx.prelim.has(m) || nfpP.has(m);
+    h += `<th class='${i === 0 ? "sep" : ""}' style='text-align:center'>${m.replace("-", "/")}${p ? "<span class='p' title='職缺或 NFP 含初值'>P</span>" : ""}</th>`;
+  });
+  document.getElementById("cmpTbl").innerHTML = h + "</tr></thead><tbody>" + rowsHtml + "</tbody>";
+  document.getElementById("qkey").innerHTML = [1, 2, 3, 4, 5].map(q =>
+    `<span><span class='chip q${q}'>${QUAD[q].short}<span class='qcount'>${counts[q]}</span></span>${q}) ${QUAD[q].rule} → ${QUAD[q].name}</span>`).join("");
+}
+
 function setLevel(ctx, n) {
   state.collapsed = new Set(ctx.rows.filter(r => r.level >= n && r.children.length).map(r => r.code));
   syncLevelBtns(n);
@@ -304,6 +402,8 @@ function init() {
     render(ctx);
   });
   setLevel(ctx, 2);
+  renderCmp(ctx);
+  ["thJ", "thN"].forEach(id => document.getElementById(id).addEventListener("input", () => renderCmp(ctx)));
 }
 init();
 </script>
