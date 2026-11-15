@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美國耐久財訂單與出貨</title>
+<style>
+:root {
+  --bg: #f6f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #6b6f76; --line: #e2e2dc; --line-strong: #c9c9c1;
+  --head: #eeeee8; --accent: #2f5d8a; --neg: #b3261e;
+  --hot: 214, 69, 65;    /* MoM above center */
+  --cold: 52, 120, 198;  /* MoM below center */
+  --edge: #b07a00;       /* near a rounding boundary */
+  --rowhover: #f3f6fa;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
+    --head: #24282d; --accent: #8db8e0; --neg: #ff8a80; --edge: #f0c050; --rowhover: #23282f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
+  --head: #24282d; --accent: #8db8e0; --neg: #ff8a80; --edge: #f0c050; --rowhover: #23282f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif; }
+header { padding: 20px 16px 8px; max-width: 1600px; margin: 0 auto; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.sub { color: var(--muted); font-size: 12.5px; }
+.measure { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 6px 16px 2px; max-width: 1600px; margin: 0 auto; }
+.measure > span { color: var(--muted); font-size: 12.5px; }
+.measure label { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line-strong); background: var(--panel);
+  border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 14px; font-weight: 600; }
+.measure label:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+.measure input { accent-color: var(--accent); margin: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 10px 16px; max-width: 1600px; margin: 0 auto; }
+.group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.group > span { color: var(--muted); font-size: 12.5px; margin-right: 2px; }
+button.seg { border: 1px solid var(--line-strong); background: var(--panel); color: var(--ink); padding: 4px 10px;
+  border-radius: 6px; font: inherit; font-size: 12.5px; cursor: pointer; }
+button.seg:hover { border-color: var(--accent); }
+button.seg[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+label.chk { font-size: 12.5px; display: flex; gap: 4px; align-items: center; cursor: pointer; }
+.wrap { max-width: 1600px; margin: 0 auto 32px; padding: 0 16px; }
+.scroller { overflow: auto; max-height: calc(100vh - 190px); border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); }
+table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; min-width: 100%; }
+th, td { padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+thead th { position: sticky; top: 0; z-index: 2; background: var(--head); font-weight: 600; font-size: 12.5px;
+  border-bottom: 1px solid var(--line-strong); text-align: right; }
+thead tr.grp th { top: 0; text-align: center; font-weight: 600; color: var(--muted); }
+thead tr.cols th { top: 27px; }
+th.name, td.name { position: sticky; left: 0; z-index: 1; background: var(--panel); text-align: left; border-right: 1px solid var(--line-strong); min-width: 340px; }
+thead th.name { z-index: 3; background: var(--head); }
+td.num { text-align: right; min-width: 64px; }
+td.sep, th.sep { border-left: 1px solid var(--line-strong); }
+tbody tr:hover td { background-color: var(--rowhover); }
+tbody tr:hover td.heat { filter: brightness(0.97); }
+td.neg { color: var(--neg); }
+td.edge { text-decoration: underline dotted var(--edge) 2px; text-underline-offset: 3px; }
+.lv0 td { font-weight: 700; } .lv1 td { font-weight: 600; }
+.lv0 td, .lv1:not(.special) td { border-top: 1px solid var(--line-strong); }
+tr.special td { font-style: italic; font-weight: 400; }
+tr.special.key td.name { font-weight: 600; }
+tr.special.last td { border-bottom: 1px solid var(--line-strong); }
+.caret { display: inline-block; width: 16px; text-align: center; cursor: pointer; color: var(--muted); user-select: none; }
+.caret.leaf { cursor: default; }
+.zh { color: var(--muted); font-size: 12px; margin-left: 6px; font-weight: 400; }
+.tag { color: var(--muted); font-size: 10.5px; border: 1px solid var(--line-strong); border-radius: 3px; padding: 0 3px; margin-left: 6px; font-style: normal; font-weight: 400; }
+.hide-zh .zh { display: none; }
+th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
+.legend { color: var(--muted); font-size: 12px; padding: 8px 2px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; }
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+@media (max-width: 640px) { th.name, td.name { min-width: 190px; } .zh { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>美國耐久財訂單與出貨（Durable Goods）分項</h1>
+  <div class="sub" id="meta"></div>
+</header>
+<div class="measure" id="measureBtns" role="radiogroup" aria-label="資料類別">
+  <span>資料</span>
+  <label><input type="radio" name="measure" value="NO" checked> 新訂單 New orders</label>
+  <label><input type="radio" name="measure" value="VS"> 出貨 Shipments</label>
+</div>
+<div class="controls">
+  <div class="group" id="levelBtns"><span>展開至</span></div>
+  <div class="group" id="viewBtns"><span>數值</span></div>
+  <div class="group" id="sortBtns"><span>排序</span></div>
+  <div class="group">
+    <label class="chk"><input type="checkbox" id="heat" checked> MoM 上色</label>
+    <label class="chk"><input type="checkbox" id="edge" checked> 標示進位邊界</label>
+    <label class="chk"><input type="checkbox" id="showZh" checked> 中文名稱</label>
+  </div>
+</div>
+<div class="wrap">
+  <div class="scroller"><table id="tbl"></table></div>
+  <div class="legend">
+    <span>季調金額（百萬美元，未經物價調整＝名目值）；MoM =（本月 ÷ 上月 − 1）× 100，新聞稿公布值為其四捨五入至 1 位小數；YoY 與 Census 相同用季調值</span>
+    <span id="flagNote"></span>
+    <span>上色：MoM 以 <span id="hc"></span>% 為中心，
+      <span class="sw" style="background:rgba(var(--cold),.6)"></span>低
+      <span class="sw" style="background:rgba(var(--hot),.6)"></span>高，偏離 <span id="hf"></span> 個百分點即最深色（適用 MoM 2位、官方1位、3個月平均）</span>
+    <span><u style="text-decoration:underline dotted var(--edge) 2px;text-underline-offset:3px">0.25</u> 兩位小數為 x.x5，官方 1 位小數取決於第三位，可能差一檔</span>
+    <span><span class="tag">完整報告</span> 只在 M3 完整報告（advance 約一週後）公布的細項；advance 剛公布時最新月為空白</span>
+    <span>斜體列為總額的扣除項或資本財分類（與底下產業重疊，不參與加總）；粗斜體＝核心資本財（非國防扣除飛機），新訂單領先設備投資、出貨用來估 GDP 設備投資</span>
+    <span>電腦與電子產品的新訂單不含半導體（Census 不公布半導體訂單），出貨有含；有些產業只公布出貨（無未交訂單的產業訂單＝出貨），新訂單檢視會隱藏這些列</span>
+    <span>占比 = 最新月金額 ÷ 耐久財總額；MoM 貢獻 pp =（本月 − 上月）÷ 上月耐久財總額 × 100，同層加總 = 母項貢獻</span>
+    <span>3個月平均 MoM = 近 3 個月 MoM 的幾何平均（本月 ÷ 3 個月前）^(1/3) − 1；3m/3m 年化 = 近 3 個月平均 ÷ 前 3 個月平均，年化</span>
+    <span>修正 = 本次公布的 MoM − 前次公布的 MoM（百分點）</span>
+  </div>
+</div>
+<script>
+const DATA = /*__DURABLE_DATA__*/null;
+
+const MEASURES = { NO: "新訂單", VS: "出貨" };
+const VIEWS = {
+  mom2: "MoM % (2位)",
+  mom1: "MoM % (官方1位)",
+  avg3: "3個月平均 MoM %",
+  contrib: "MoM 貢獻 pp",
+  ann3: "3個月年化 %",
+  q3: "3m/3m 年化 %",
+  yoy: "YoY %",
+  lvl: "金額 ($bn)",
+  rev: "MoM 修正 pp",
+};
+const LEVEL_NAMES = ["總額", "產業", "細產業", "次細產業"];
+const SORTS = { share: "占比大→小", census: "Census 原順序" };
+const state = { measure: "NO", view: "mom2", sort: "share", heat: true, edge: true, collapsed: new Set() };
+// MoM color scale: red above HEAT_CENTER (≈ 4% a year nominal trend), blue below; full depth HEAT_FULL away
+// (durable goods, aircraft above all, swing far more than retail sales).
+const HEAT_CENTER = 0.3, HEAT_FULL = 2.0, HEAT_MAX_ALPHA = 0.6;
+
+function ymPrev(ym, n = 1) {
+  let [y, m] = ym.split("-").map(Number);
+  m -= n; while (m <= 0) { m += 12; y--; }
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+// Round half away from zero; the epsilon guards against binary float noise (0.25 -> 0.2499999).
+const roundTo = (v, d) => { const k = 10 ** d; return Math.sign(v) * Math.round(Math.abs(v) * k + 1e-9) / k; };
+const fmt = (v, d = 2) => {
+  if (v == null || Number.isNaN(v)) return "";
+  const r = roundTo(v, d) || 0;   // avoid "-0"
+  return r.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+};
+const pct = (a, b) => (a != null && b != null && b) ? (a / b - 1) * 100 : null;
+const nearEdge = v => { if (v == null) return false; const f = Math.abs(v) * 10 % 1; return f >= 0.45 - 1e-9 && f < 0.55 - 1e-9; };
+
+function measures(L, total, months) {
+  const o = { mom: {}, avg3: {}, contrib: {}, ann3: {}, q3: {}, yoy: {} };
+  months.forEach(m => {
+    const p = ymPrev(m);
+    o.mom[m] = pct(L[m], L[p]);
+    o.contrib[m] = L[m] != null && L[p] != null && total[p] ? (L[m] - L[p]) / total[p] * 100 : null;
+    const g3 = pct(L[m], L[ymPrev(m, 3)]);
+    o.ann3[m] = g3 == null ? null : ((1 + g3 / 100) ** 4 - 1) * 100;
+    // Geometric mean of the last three monthly changes.
+    o.avg3[m] = g3 == null ? null : ((1 + g3 / 100) ** (1 / 3) - 1) * 100;
+    const avg = ks => ks.every(k => L[k] != null) ? ks.reduce((a, k) => a + L[k], 0) / ks.length : null;
+    const a = avg([0, 1, 2].map(i => ymPrev(m, i))), b = avg([3, 4, 5].map(i => ymPrev(m, i)));
+    o.q3[m] = a != null && b ? ((a / b) ** 4 - 1) * 100 : null;
+    o.yoy[m] = pct(L[m], L[ymPrev(m, 12)]);
+  });
+  return o;
+}
+
+// One context per measure (new orders / shipments): rows that have that measure, with their metrics.
+function prepare(measure) {
+  const rows = DATA.rows.filter(r => r.levels[measure] && Object.keys(r.levels[measure]).length)
+    .map(r => ({ ...r, L: r.levels[measure] }));
+  const byId = Object.fromEntries(rows.map(r => [r.id, r]));
+  rows.forEach(r => { r.children = rows.filter(c => c.parent === r.id && !c.special).map(c => c.id); });
+  const allMonths = [...new Set(rows.flatMap(r => Object.keys(r.L)))].sort();
+  const months = allMonths.filter(m => m >= DATA.start).reverse();   // newest first
+  const latest = DATA.latest;
+  const total = byId.DUR.L;
+  const prior = DATA.prior && DATA.prior.levels;
+  const priorTotal = prior && prior.DUR && prior.DUR[measure];
+  rows.forEach(r => {
+    Object.assign(r, measures(r.L, total, months));
+    r.lvl = Object.fromEntries(months.map(m => [m, r.L[m] != null ? r.L[m] / 1000 : null]));
+    const lastM = months.find(m => r.L[m] != null);
+    r.share = lastM && total[lastM] ? r.L[lastM] / total[lastM] * 100 : null;
+    r.contribLatest = r.contrib[latest];
+    r.rev = {};
+    const old = prior && prior[r.id] && prior[r.id][measure];
+    if (old) {
+      const oldMom = measures(old, priorTotal || total, months).mom;
+      months.forEach(m => { r.rev[m] = r.mom[m] != null && oldMom[m] != null ? r.mom[m] - oldMom[m] : null; });
+    }
+  });
+  // Advance report: latest month = advance, the one before revised. Full report: latest = preliminary.
+  const flags = DATA.report === "advance" ? { [latest]: "A", [ymPrev(latest)]: "r" } : { [latest]: "p", [ymPrev(latest)]: "r" };
+  return { rows, byId, months, latest, flags, hasPrior: !!prior };
+}
+
+function heatStyle(v) {
+  if (!state.heat || !["mom2", "mom1", "avg3"].includes(state.view) || v == null) return "";
+  const d = v - HEAT_CENTER;
+  if (Math.abs(d) < 1e-9) return "";
+  const a = (Math.min(Math.abs(d) / HEAT_FULL, 1) * HEAT_MAX_ALPHA).toFixed(2);
+  return `background-color:rgba(var(${d > 0 ? "--hot" : "--cold"}),${a})`;
+}
+
+function isVisible(r, ctx) {
+  let p = r.parent;
+  while (p && ctx.byId[p]) { if (state.collapsed.has(p)) return false; p = ctx.byId[p].parent; }
+  return true;
+}
+
+function cellValue(r, m) {
+  switch (state.view) {
+    case "mom2": case "mom1": return r.mom[m];
+    case "lvl": return r.lvl[m];
+    default: return r[state.view][m];
+  }
+}
+
+// Total, then its "excluding" / capital goods aggregates, then the additive tree depth-first.
+function ordered(ctx) {
+  const out = [];
+  const kids = id => {
+    const k = ctx.byId[id].children.map(c => ctx.byId[c]);
+    return state.sort === "share" ? [...k].sort((a, b) => (b.share ?? -1) - (a.share ?? -1)) : k;
+  };
+  const walk = r => { out.push(r); kids(r.id).forEach(walk); };
+  const root = ctx.byId.DUR;
+  out.push(root);
+  ctx.rows.filter(r => r.special).forEach(r => out.push(r));
+  kids(root.id).forEach(walk);
+  return out;
+}
+
+function render() {
+  const ctx = CTX[state.measure];
+  const { months, latest, flags } = ctx;
+  const rows = ordered(ctx);
+  const dec = state.view === "mom1" ? 1 : state.view === "lvl" ? 1 : 2;
+  const L = latest.replace("-", "/");
+  const specials = rows.filter(r => r.special);
+  const mname = MEASURES[state.measure];
+  let h = `<thead><tr class='grp'><th class='name'></th><th colspan='2'>${L}</th>`;
+  h += `<th class='sep' colspan='${months.length}'>${mname}｜${VIEWS[state.view]}${state.view === "rev" && DATA.prior ? `（對 ${DATA.prior.released || DATA.prior.vintage} 公布）` : ""}</th></tr>`;
+  h += `<tr class='cols'><th class='name'>產業（${mname}）</th>`;
+  h += `<th title='最新月金額占耐久財總額 %'>占比 %</th><th title='（本月 − 上月）÷ 上月耐久財總額 × 100'>貢獻 pp</th>`;
+  const FLAG_TITLE = { A: "advance 預估值", p: "preliminary 初值（完整報告）", r: "revised 修正值" };
+  months.forEach((m, i) => {
+    const f = flags[m];
+    h += `<th class='${i === 0 ? "sep" : ""}'>${m.replace("-", "/")}${f ? `<span class='p' title='${FLAG_TITLE[f]}'>${f}</span>` : ""}</th>`;
+  });
+  h += "</tr></thead><tbody>";
+  rows.forEach(r => {
+    if (!isVisible(r, ctx)) return;
+    const hasKids = r.children.length > 0;
+    const caret = hasKids ? `<span class='caret' data-id='${r.id}'>${state.collapsed.has(r.id) ? "▸" : "▾"}</span>`
+                          : "<span class='caret leaf'></span>";
+    const src = `M3 ${r.m3}${state.measure}${r.adv ? "（advance 報告有此項）" : "（僅完整報告）"}`;
+    const cls = `lv${r.level} ${r.special ? "special" : ""} ${r.id === "NXA" ? "key" : ""} ${r === specials[specials.length - 1] ? "last" : ""}`;
+    h += `<tr class='${cls}' title='${src}'>`;
+    h += `<td class='name' style='padding-left:${8 + r.level * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>` +
+         `${r.adv ? "" : "<span class='tag'>完整報告</span>"}</td>`;
+    h += `<td class='num'>${r.share != null ? fmt(r.share, 1) : ""}</td>`;
+    h += `<td class='num ${r.contribLatest < 0 ? "neg" : ""}'>${r.contribLatest != null ? fmt(r.contribLatest, 2) : ""}</td>`;
+    months.forEach((m, i) => {
+      const v = cellValue(r, m);
+      const neg = state.view !== "lvl" && v != null && roundTo(v, dec) < 0;
+      const st = heatStyle(v);
+      const edge = state.edge && state.view === "mom2" && nearEdge(v);
+      h += `<td class='num ${i === 0 ? "sep" : ""} ${neg ? "neg" : ""} ${st ? "heat" : ""} ${edge ? "edge" : ""}' style='${st}'>${fmt(v, dec)}</td>`;
+    });
+    h += "</tr>";
+  });
+  h += "</tbody>";
+  document.getElementById("tbl").innerHTML = h;
+}
+
+let CTX = {}, LEVEL = 1;
+function setLevel(n) {
+  LEVEL = n;
+  // Collapse by id across both measures so switching measure keeps the same expansion.
+  state.collapsed = new Set(DATA.rows.filter(r => r.level >= n).map(r => r.id));
+  syncLevelBtns(n);
+  render();
+}
+function syncLevelBtns(n) {
+  document.querySelectorAll("#levelBtns button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.n === n)));
+}
+
+function init() {
+  if (!DATA) { document.getElementById("tbl").outerHTML = "<div class='empty'>尚無資料：請先執行 fetch_durable.py 與 build_dashboard.py</div>"; return; }
+  CTX = { NO: prepare("NO"), VS: prepare("VS") };
+  document.getElementById("hc").textContent = HEAT_CENTER.toFixed(2);
+  document.getElementById("hf").textContent = HEAT_FULL.toFixed(1);
+  const adv = DATA.report === "advance";
+  document.getElementById("meta").textContent =
+    `資料來源：${DATA.source}｜最新月份 ${DATA.latest}（${adv ? "advance 預估報告" : "完整報告"}，${DATA.released || "?"} 公布）` +
+    (adv ? `，細項（完整報告）至 ${DATA.latest_full}` : "") + `｜擷取時間 ${DATA.fetched_at}` +
+    (DATA.missing && DATA.missing.length ? `｜缺資料：${DATA.missing.join(", ")}` : "");
+  document.getElementById("flagNote").innerHTML = adv
+    ? "<b style='color:var(--accent)'>A</b> advance 預估值（樣本較小，約一週後的完整報告會修正）、<b style='color:var(--accent)'>r</b> 修正值"
+    : "<b style='color:var(--accent)'>p</b> 完整報告初值（下個月 advance 報告會再修正）、<b style='color:var(--accent)'>r</b> 修正值";
+  const maxLv = Math.max(...DATA.rows.map(r => r.level));
+  const lb = document.getElementById("levelBtns");
+  for (let n = 0; n <= maxLv; n++) {
+    const b = document.createElement("button");
+    b.className = "seg"; b.dataset.n = n; b.textContent = `L${n} ${LEVEL_NAMES[n] || ""}`;
+    b.onclick = () => setLevel(n);
+    lb.appendChild(b);
+  }
+  const vb = document.getElementById("viewBtns");
+  Object.entries(VIEWS).forEach(([k, label]) => {
+    if (k === "rev" && !DATA.prior) return;   // needs a prior vintage in the data file
+    const b = document.createElement("button");
+    b.className = "seg"; b.textContent = label; b.setAttribute("aria-pressed", String(k === state.view));
+    b.onclick = () => { state.view = k; vb.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); };
+    vb.appendChild(b);
+  });
+  const sb = document.getElementById("sortBtns");
+  Object.entries(SORTS).forEach(([k, label]) => {
+    const b = document.createElement("button");
+    b.className = "seg"; b.textContent = label; b.setAttribute("aria-pressed", String(k === state.sort));
+    b.onclick = () => { state.sort = k; sb.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); };
+    sb.appendChild(b);
+  });
+  document.querySelectorAll("input[name=measure]").forEach(inp => {
+    inp.onchange = () => { if (inp.checked) { state.measure = inp.value; render(); } };
+  });
+  document.getElementById("heat").onchange = e => { state.heat = e.target.checked; render(); };
+  document.getElementById("edge").onchange = e => { state.edge = e.target.checked; render(); };
+  document.getElementById("showZh").onchange = e => document.body.classList.toggle("hide-zh", !e.target.checked);
+  document.getElementById("tbl").addEventListener("click", e => {
+    const id = e.target.dataset && e.target.dataset.id;
+    if (!id) return;
+    state.collapsed.has(id) ? state.collapsed.delete(id) : state.collapsed.add(id);
+    syncLevelBtns(-1);
+    render();
+  });
+  setLevel(1);
+}
+init();
+</script>
+</body>
+</html>
