@@ -1,0 +1,42 @@
+{
+  "_note": "US retail & food services sales hierarchy (Census Bureau, seasonally adjusted, millions of dollars, NAICS 2017-basis kinds of business as published). id = row id; level 0 = Retail & food services total; parent = id of the parent row. Data source per row: adv = code of the Advance Monthly Retail Trade (MARTS) time-series file https://www.census.gov/retail/marts/www/adv<code>.txt (has the advance month); mrts = NAICS code as printed in the Monthly Retail Trade (MRTS) workbook mrtssales92-present.xlsx, ADJUSTED block (one month behind the advance report). derived = not fetched; computed in build_dashboard.py from SA dollar levels as sum(plus) - sum(minus) (or base - minus). special = headline aggregate outside the additive tree, displayed right below the total. Children of each parent are additive except where the Census publishes only some sub-industries (e.g. 4413 + 4411/4412 = 441, but 4451 + 4453 < 445). Edit this file to add/remove rows; adv and mrts codes must exist in those Census files.",
+  "rows": [
+    {"id": "TOTAL",     "level": 0, "parent": null,      "adv": "44X72", "en": "Retail & food services, total",                         "zh": "零售與餐飲銷售總額"},
+    {"id": "EXAUTO",    "level": 1, "parent": "TOTAL",   "adv": "44Y72", "special": true, "en": "Total excl. motor vehicle & parts",            "zh": "扣除汽車"},
+    {"id": "EXGAS",     "level": 1, "parent": "TOTAL",   "adv": "44Z72", "special": true, "en": "Total excl. gasoline stations",                "zh": "扣除加油站"},
+    {"id": "EXAUTOGAS", "level": 1, "parent": "TOTAL",   "adv": "44W72", "special": true, "en": "Total excl. motor vehicle & parts and gasoline", "zh": "扣除汽車與加油站"},
+    {"id": "RETAIL",    "level": 1, "parent": "TOTAL",   "adv": "44000", "special": true, "en": "Retail total (excl. food services)",           "zh": "零售總額（不含餐飲）"},
+
+    {"id": "CONTROL",   "level": 1, "parent": "TOTAL",   "en": "Control group (excl. autos, gas, building materials, food services)", "zh": "控制組（扣除汽車、加油站、建材、餐飲）",
+     "derived": {"base": "TOTAL", "minus": ["441", "444", "447", "722"]}},
+    {"id": "442",       "level": 2, "parent": "CONTROL", "adv": "44200", "en": "Furniture & home furnishings stores",                "zh": "家具與家飾"},
+    {"id": "443",       "level": 2, "parent": "CONTROL", "adv": "44300", "en": "Electronics & appliance stores",                     "zh": "電子與家電"},
+    {"id": "445",       "level": 2, "parent": "CONTROL", "adv": "44500", "en": "Food & beverage stores",                             "zh": "食品與飲料店"},
+    {"id": "4451",      "level": 3, "parent": "445",     "adv": "44510", "en": "Grocery stores",                                     "zh": "超市與雜貨店"},
+    {"id": "4453",      "level": 3, "parent": "445",     "mrts": "4453", "en": "Beer, wine & liquor stores",                          "zh": "酒類專賣店"},
+    {"id": "446",       "level": 2, "parent": "CONTROL", "adv": "44600", "en": "Health & personal care stores",                      "zh": "保健與個人護理"},
+    {"id": "44611",     "level": 3, "parent": "446",     "mrts": "44611", "en": "Pharmacies & drug stores",                          "zh": "藥局"},
+    {"id": "448",       "level": 2, "parent": "CONTROL", "adv": "44800", "en": "Clothing & clothing accessories stores",             "zh": "服飾與配件"},
+    {"id": "4481",      "level": 3, "parent": "448",     "mrts": "4481", "en": "Clothing stores",                                    "zh": "服裝店"},
+    {"id": "44812",     "level": 4, "parent": "4481",    "mrts": "44812", "en": "Women's clothing stores",                           "zh": "女裝店"},
+    {"id": "4482",      "level": 3, "parent": "448",     "mrts": "4482", "en": "Shoe stores",                                        "zh": "鞋店"},
+    {"id": "451",       "level": 2, "parent": "CONTROL", "adv": "45100", "en": "Sporting goods, hobby, musical instrument & book stores", "zh": "運動用品、嗜好、樂器與書店"},
+    {"id": "452",       "level": 2, "parent": "CONTROL", "adv": "45200", "en": "General merchandise stores",                         "zh": "綜合商品零售"},
+    {"id": "4522",      "level": 3, "parent": "452",     "adv": "45220", "en": "Department stores",                                  "zh": "百貨公司"},
+    {"id": "4523",      "level": 3, "parent": "452",     "mrts": "4523", "en": "General merchandise incl. warehouse clubs & supercenters", "zh": "其他綜合商品（含量販與超級購物中心）"},
+    {"id": "452311",    "level": 4, "parent": "4523",    "mrts": "452311", "en": "Warehouse clubs & supercenters",                   "zh": "倉儲量販與超級購物中心"},
+    {"id": "452319",    "level": 4, "parent": "4523",    "mrts": "452319", "en": "All other general merchandise stores",             "zh": "其他綜合商品店"},
+    {"id": "453",       "level": 2, "parent": "CONTROL", "adv": "45300", "en": "Miscellaneous store retailers",                      "zh": "其他零售店"},
+    {"id": "454",       "level": 2, "parent": "CONTROL", "adv": "45400", "en": "Nonstore retailers",                                 "zh": "無店面零售（含電商）"},
+    {"id": "4541",      "level": 3, "parent": "454",     "mrts": "4541", "en": "Electronic shopping & mail-order houses",            "zh": "電商與郵購"},
+    {"id": "45431",     "level": 3, "parent": "454",     "mrts": "45431", "en": "Fuel dealers",                                      "zh": "燃料經銷商"},
+
+    {"id": "441",       "level": 1, "parent": "TOTAL",   "adv": "44100", "en": "Motor vehicle & parts dealers",                      "zh": "汽車與零件經銷商"},
+    {"id": "4411",      "level": 2, "parent": "441",     "adv": "441X0", "en": "Automobile & other motor vehicle dealers",           "zh": "汽車經銷商"},
+    {"id": "4413",      "level": 2, "parent": "441",     "mrts": "4413", "en": "Automotive parts, accessories & tire stores",        "zh": "汽車零件、配件與輪胎"},
+    {"id": "447",       "level": 1, "parent": "TOTAL",   "adv": "44700", "en": "Gasoline stations",                                  "zh": "加油站"},
+    {"id": "444",       "level": 1, "parent": "TOTAL",   "adv": "44400", "en": "Building material & garden equipment & supplies dealers", "zh": "建材與園藝"},
+    {"id": "4441",      "level": 2, "parent": "444",     "mrts": "4441", "en": "Building material & supplies dealers",               "zh": "建材經銷商"},
+    {"id": "722",       "level": 1, "parent": "TOTAL",   "adv": "72200", "en": "Food services & drinking places",                    "zh": "餐飲服務"}
+  ]
+}
