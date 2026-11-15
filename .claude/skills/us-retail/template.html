@@ -91,12 +91,13 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
     <span><b style="color:var(--accent)">A</b> 預估值（advance）、<b style="color:var(--accent)">P</b> 初值（preliminary），下個月與再下個月會修正</span>
     <span>上色：MoM 以 <span id="hc"></span>% 為中心，
       <span class="sw" style="background:rgba(var(--cold),.6)"></span>低
-      <span class="sw" style="background:rgba(var(--hot),.6)"></span>高，偏離 <span id="hf"></span> 個百分點即最深色（適用 MoM 2位、官方1位）</span>
+      <span class="sw" style="background:rgba(var(--hot),.6)"></span>高，偏離 <span id="hf"></span> 個百分點即最深色（適用 MoM 2位、官方1位、3個月平均）</span>
     <span><u style="text-decoration:underline dotted var(--edge) 2px;text-underline-offset:3px">0.25</u> 兩位小數為 x.x5，官方 1 位小數取決於第三位，可能差一檔</span>
     <span><span class="tag">計算</span> 控制組 = 總額 − 汽車與零件 − 建材 − 加油站 − 餐飲（季調金額相減），BEA 估算 PCE 商品消費時用的口徑</span>
     <span><span class="tag">MRTS</span> 細業別只在 MRTS 公布，比預估報告晚一個月，最新月為空白</span>
     <span>斜體列為總額的扣除項版本（與底下分項重疊，不參與加總）；L1 五塊（控制組、汽車、加油站、建材、餐飲）加總 = 總額</span>
     <span>占比 = 最新月銷售額 ÷ 總額；MoM 貢獻 pp =（本月 − 上月）÷ 上月總額 × 100，同層加總 = 母項貢獻</span>
+    <span>3個月平均 MoM = 近 3 個月 MoM 的幾何平均（本月 ÷ 3 個月前）^(1/3) − 1</span>
     <span>修正 = 本次公布的 MoM − 前次公布的 MoM（百分點）</span>
   </div>
 </div>
@@ -106,6 +107,7 @@ const DATA = /*__RETAIL_DATA__*/null;
 const VIEWS = {
   mom2: "MoM % (2位)",
   mom1: "MoM % (官方1位)",
+  avg3: "3個月平均 MoM %",
   contrib: "MoM 貢獻 pp",
   ann3: "3個月年化 %",
   q3: "3m/3m 年化 %",
@@ -135,13 +137,15 @@ const pct = (a, b) => (a != null && b != null && b) ? (a / b - 1) * 100 : null;
 const nearEdge = v => { if (v == null) return false; const f = Math.abs(v) * 10 % 1; return f >= 0.45 - 1e-9 && f < 0.55 - 1e-9; };
 
 function measures(L, total, months) {
-  const o = { mom: {}, contrib: {}, ann3: {}, q3: {}, yoy: {} };
+  const o = { mom: {}, avg3: {}, contrib: {}, ann3: {}, q3: {}, yoy: {} };
   months.forEach(m => {
     const p = ymPrev(m);
     o.mom[m] = pct(L[m], L[p]);
     o.contrib[m] = L[m] != null && L[p] != null && total[p] ? (L[m] - L[p]) / total[p] * 100 : null;
     const g3 = pct(L[m], L[ymPrev(m, 3)]);
     o.ann3[m] = g3 == null ? null : ((1 + g3 / 100) ** 4 - 1) * 100;
+    // Geometric mean of the last three monthly changes.
+    o.avg3[m] = g3 == null ? null : ((1 + g3 / 100) ** (1 / 3) - 1) * 100;
     const avg = ks => ks.every(k => L[k] != null) ? ks.reduce((a, k) => a + L[k], 0) / ks.length : null;
     const a = avg([0, 1, 2].map(i => ymPrev(m, i))), b = avg([3, 4, 5].map(i => ymPrev(m, i)));
     o.q3[m] = a != null && b ? ((a / b) ** 4 - 1) * 100 : null;
@@ -178,7 +182,7 @@ function prepare() {
 }
 
 function heatStyle(v) {
-  if (!state.heat || !["mom2", "mom1"].includes(state.view) || v == null) return "";
+  if (!state.heat || !["mom2", "mom1", "avg3"].includes(state.view) || v == null) return "";
   const d = v - HEAT_CENTER;
   if (Math.abs(d) < 1e-9) return "";
   const a = (Math.min(Math.abs(d) / HEAT_FULL, 1) * HEAT_MAX_ALPHA).toFixed(2);
