@@ -1,0 +1,22 @@
+{
+  "_note": "Pages listed on the macro hub. group = section heading; kind = which headline extractor in build_hub.py reads data (add one there for a new indicator). Order within a group is display order.",
+  "groups": ["勞動市場", "通膨"],
+  "pages": [
+    {"kind": "nfp",   "group": "勞動市場", "title": "美國非農就業 NFP", "skill": "us-nfp",
+     "url": "https://claude.ai/artifact/LFicXM9drai7hoMR3GzDWh", "data": "nfp/data/nfp_ces.json",
+     "release": "每月第一個週五（Employment Situation）",
+     "desc": "產業別逐月就業變化、3 個月平均、年度累計；民間超級產業前後 3 名上色。"},
+    {"kind": "wages", "group": "勞動市場", "title": "美國平均時薪 MoM", "skill": "us-wages",
+     "url": "https://claude.ai/artifact/CWqCGD6vxvPiCCuPfG6buV", "data": "wages/data/ahe.json",
+     "release": "與 NFP 同時公布",
+     "desc": "產業別時薪兩位小數 MoM、3 個月年化、YoY；時薪 vs NFP 對照分類。"},
+    {"kind": "jolts", "group": "勞動市場", "title": "美國職缺 JOLTS", "skill": "us-jolts",
+     "url": "https://claude.ai/artifact/Kop8CZDuqe7wExvaQbjP62", "data": "jolts/data/jolts.json",
+     "release": "每月初，比 NFP 晚一個月",
+     "desc": "職缺、招聘、自願離職、裁員的產業別水準與比率；失業人數 ÷ 職缺；職缺 vs NFP 對照分類。"},
+    {"kind": "cpi",   "group": "通膨", "title": "美國 CPI 分項", "skill": "us-cpi",
+     "url": "https://claude.ai/artifact/F1brNA4TDvA2n1vLxMsbt3", "data": "cpi/data/cpi.json",
+     "release": "每月中旬",
+     "desc": "CPI-U 分項兩位小數 MoM、3 個月年化、YoY；住房、超級核心、核心商品拆解與貢獻。"}
+  ]
+}
