@@ -44,6 +44,7 @@ description: 收集美國耐久財（Census M3 Manufacturers' Shipments, Invento
 - 進位邊界：兩位小數為 x.x5 時加點狀底線，官方一位小數取決於第三位。
 - 同層產業預設按占比由大到小排序，可切回 Census 原順序。
 - 標籤：`完整報告` = advance 報告沒有的細項。
+- 核心資本財標色（可用「標示核心資本財」關閉）：項目欄深綠底＋實線 = 推測整個產業屬於核心資本財（非國防資本財扣除飛機），淡綠底 = 部分屬於。Census 不逐產業公布歸屬，這是依 advance table1a 註腳 3 的資本財產品清單推測，定義在 `series.json` 的 `core`（`full`／`partial`）。
 
 ## 分析時注意
 

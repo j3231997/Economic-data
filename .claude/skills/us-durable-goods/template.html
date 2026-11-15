@@ -12,6 +12,7 @@
   --cold: 52, 120, 198;  /* MoM below center */
   --edge: #b07a00;       /* near a rounding boundary */
   --rowhover: #f3f6fa;
+  --core: 34, 139, 84;   /* estimated core capital goods (name column) */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -69,6 +70,9 @@ tr.special.last td { border-bottom: 1px solid var(--line-strong); }
 .zh { color: var(--muted); font-size: 12px; margin-left: 6px; font-weight: 400; }
 .tag { color: var(--muted); font-size: 10.5px; border: 1px solid var(--line-strong); border-radius: 3px; padding: 0 3px; margin-left: 6px; font-style: normal; font-weight: 400; }
 .hide-zh .zh { display: none; }
+td.name.core-full { background-image: linear-gradient(rgba(var(--core),.16), rgba(var(--core),.16)); box-shadow: inset 4px 0 0 rgb(var(--core)); }
+td.name.core-partial { background-image: linear-gradient(rgba(var(--core),.07), rgba(var(--core),.07)); box-shadow: inset 4px 0 0 rgba(var(--core),.45); }
+.swc { display: inline-block; width: 14px; height: 12px; vertical-align: -2px; margin-right: 4px; border-radius: 2px; }
 th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
 .legend { color: var(--muted); font-size: 12px; padding: 8px 2px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; }
@@ -93,6 +97,7 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
   <div class="group">
     <label class="chk"><input type="checkbox" id="heat" checked> MoM 上色</label>
     <label class="chk"><input type="checkbox" id="edge" checked> 標示進位邊界</label>
+    <label class="chk"><input type="checkbox" id="core" checked> 標示核心資本財</label>
     <label class="chk"><input type="checkbox" id="showZh" checked> 中文名稱</label>
   </div>
 </div>
@@ -105,6 +110,9 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
       <span class="sw" style="background:rgba(var(--cold),.6)"></span>低
       <span class="sw" style="background:rgba(var(--hot),.6)"></span>高，偏離 <span id="hf"></span> 個百分點即最深色（適用 MoM 2位、官方1位、3個月平均）</span>
     <span><u style="text-decoration:underline dotted var(--edge) 2px;text-underline-offset:3px">0.25</u> 兩位小數為 x.x5，官方 1 位小數取決於第三位，可能差一檔</span>
+    <span>項目欄底色（推測，Census 未逐產業公布）：
+      <span class="swc" style="background:rgba(var(--core),.16);box-shadow:inset 4px 0 0 rgb(var(--core))"></span>整個產業屬於核心資本財
+      <span class="swc" style="background:rgba(var(--core),.07);box-shadow:inset 4px 0 0 rgba(var(--core),.45)"></span>部分屬於（如金屬製品中的小型武器、辦公家具、醫療器材、非國防船舶、重卡以外的汽車）；依 Census 資本財註腳推測，核心＝非國防資本財扣除飛機</span>
     <span><span class="tag">完整報告</span> 只在 M3 完整報告（advance 約一週後）公布的細項；advance 剛公布時最新月為空白</span>
     <span>斜體列為總額的扣除項或資本財分類（與底下產業重疊，不參與加總）；粗斜體＝核心資本財（非國防扣除飛機），新訂單領先設備投資、出貨用來估 GDP 設備投資</span>
     <span>電腦與電子產品的新訂單不含半導體（Census 不公布半導體訂單），出貨有含；有些產業只公布出貨（無未交訂單的產業訂單＝出貨），新訂單檢視會隱藏這些列</span>
@@ -130,7 +138,7 @@ const VIEWS = {
 };
 const LEVEL_NAMES = ["總額", "產業", "細產業", "次細產業"];
 const SORTS = { share: "占比大→小", census: "Census 原順序" };
-const state = { measure: "NO", view: "mom2", sort: "share", heat: true, edge: true, collapsed: new Set() };
+const state = { measure: "NO", view: "mom2", sort: "share", heat: true, edge: true, core: true, collapsed: new Set() };
 // MoM color scale: red above HEAT_CENTER (≈ 4% a year nominal trend), blue below; full depth HEAT_FULL away
 // (durable goods, aircraft above all, swing far more than retail sales).
 const HEAT_CENTER = 0.3, HEAT_FULL = 2.0, HEAT_MAX_ALPHA = 0.6;
@@ -261,7 +269,9 @@ function render() {
     const src = `M3 ${r.m3}${state.measure}${r.adv ? "（advance 報告有此項）" : "（僅完整報告）"}`;
     const cls = `lv${r.level} ${r.special ? "special" : ""} ${r.id === "NXA" ? "key" : ""} ${r === specials[specials.length - 1] ? "last" : ""}`;
     h += `<tr class='${cls}' title='${src}'>`;
-    h += `<td class='name' style='padding-left:${8 + r.level * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>` +
+    const coreCls = state.core && r.core ? `core-${r.core}` : "";
+    const coreTip = r.core === "full" ? "｜推測：整個產業屬於核心資本財" : r.core === "partial" ? "｜推測：部分屬於核心資本財" : "";
+    h += `<td class='name ${coreCls}' title='${src}${coreTip}' style='padding-left:${8 + r.level * 18}px'>${caret}${r.en}${r.zh ? `<span class='zh'>${r.zh}</span>` : ""}` +
          `${r.adv ? "" : "<span class='tag'>完整報告</span>"}</td>`;
     h += `<td class='num'>${r.share != null ? fmt(r.share, 1) : ""}</td>`;
     h += `<td class='num ${r.contribLatest < 0 ? "neg" : ""}'>${r.contribLatest != null ? fmt(r.contribLatest, 2) : ""}</td>`;
@@ -331,6 +341,7 @@ function init() {
   });
   document.getElementById("heat").onchange = e => { state.heat = e.target.checked; render(); };
   document.getElementById("edge").onchange = e => { state.edge = e.target.checked; render(); };
+  document.getElementById("core").onchange = e => { state.core = e.target.checked; render(); };
   document.getElementById("showZh").onchange = e => document.body.classList.toggle("hide-zh", !e.target.checked);
   document.getElementById("tbl").addEventListener("click", e => {
     const id = e.target.dataset && e.target.dataset.id;
