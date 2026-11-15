@@ -1,0 +1,138 @@
+<title>總經數據入口</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column of indicator groups; each group is a wrapping grid of cards (summary figures, 12-month mini chart, link). */
+:root {
+  --bg: #f6f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #6b6f76; --line: #e2e2dc; --line-strong: #c9c9c1;
+  --accent: #2f5d8a; --accent-soft: #e4ecf4; --neg: #b3261e; --bar: #6f93b8;
+  --font: -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
+    --accent: #8db8e0; --accent-soft: #233445; --neg: #ff8a80; --bar: #5f86ad; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
+  --accent: #8db8e0; --accent-soft: #233445; --neg: #ff8a80; --bar: #5f86ad; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); }
+.page { max-width: 1200px; margin: 0 auto; padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 28px; }
+header h1 { font-size: 22px; margin: 0 0 4px; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); font-size: 13px; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section h2 { font-size: 13px; letter-spacing: .08em; color: var(--muted); margin: 0; font-weight: 600;
+  padding-bottom: 6px; border-bottom: 1px solid var(--line-strong); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
+.card { min-width: 0; display: flex; flex-direction: column; gap: 10px; background: var(--panel);
+  border: 1px solid var(--line-strong); border-radius: 10px; padding: 14px 16px; color: inherit; text-decoration: none;
+  transition: border-color .15s; }
+.card:hover { border-color: var(--accent); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.top h3 { margin: 0; font-size: 16px; }
+.pill { font-size: 12px; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 1px 8px;
+  white-space: nowrap; font-variant-numeric: tabular-nums; }
+.figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fig .k { font-size: 11.5px; color: var(--muted); }
+.fig .v { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.fig .v.neg { color: var(--neg); }
+.fig .n { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chart { display: flex; flex-direction: column; gap: 2px; }
+.chart .lbl { font-size: 11.5px; color: var(--muted); }
+.chart svg { width: 100%; height: 64px; display: block; overflow: visible; }
+.chart .axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.desc { margin: 0; font-size: 12.5px; color: var(--muted); }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 12px; color: var(--muted);
+  border-top: 1px solid var(--line); padding-top: 8px; }
+.foot .go { color: var(--accent); font-weight: 600; }
+.howto { font-size: 12.5px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.howto code { background: var(--accent-soft); color: var(--ink); padding: 0 5px; border-radius: 4px; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+<div class="page">
+  <header>
+    <h1>總經數據入口</h1>
+    <p id="sub"></p>
+  </header>
+  <div id="groups"></div>
+  <div class="howto">
+    <div>更新：跟 Claude 說 <code>更新 NFP</code>、<code>更新時薪</code>、<code>更新 JOLTS</code>、<code>更新 CPI</code>，各網頁和這個入口頁的網址都不會變。</div>
+    <div>數字為季調後資料；P 代表最新月含初值，之後會修正。卡片上的數字是 Claude 上次更新時抓的值。</div>
+  </div>
+</div>
+<script>
+const HUB = /*__HUB_DATA__*/null;
+const fmtNum = (v, f) => {
+  if (v == null || Number.isNaN(v)) return "—";
+  const d = f === "k0" ? 0 : +f.slice(1);
+  const r = Math.round(v * 10 ** d) / 10 ** d || 0;
+  return r.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+};
+function figure(f) {
+  let s = fmtNum(f.v, f.fmt);
+  if (f.sign && f.v != null && Math.round(f.v) > 0) s = "+" + s;
+  if (f.fmt === "k0") s += "k";
+  if (f.unit && f.unit !== "$") s += f.unit;
+  if (f.unit === "$") s = "$" + s;
+  const d = f.fmt === "k0" ? 0 : +f.fmt.slice(1);
+  const neg = f.v != null && Math.round(f.v * 10 ** d) < 0;
+  return `<div class="fig"><div class="k">${f.k}</div><div class="v${neg ? " neg" : ""}">${s}</div>` +
+         `<div class="n">${f.note || "&nbsp;"}</div></div>`;
+}
+function chart(c) {
+  const W = 300, H = 64, pad = 4, pts = c.points, n = pts.length;
+  const vals = pts.map(p => p[1]).filter(v => v != null);
+  if (!vals.length) return "";
+  let svg = "";
+  if (c.type === "bar") {
+    const lo = Math.min(0, ...vals, c.ref ?? 0), hi = Math.max(0, ...vals, c.ref ?? 0);
+    const y = v => pad + (hi - v) / ((hi - lo) || 1) * (H - 2 * pad);
+    const bw = W / n;
+    pts.forEach(([m, v], i) => {
+      if (v == null) return;
+      const y0 = y(0), y1 = y(v), top = Math.min(y0, y1), h = Math.max(Math.abs(y1 - y0), 1);
+      svg += `<rect x="${(i * bw + bw * 0.15).toFixed(1)}" y="${top.toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" style="fill:var(${v < 0 ? "--neg" : "--bar"})"><title>${m}: ${v.toFixed(2)}</title></rect>`;
+    });
+    svg += `<line x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" style="stroke:var(--line-strong)" stroke-width="1"/>`;
+    if (c.ref) svg += `<line x1="0" x2="${W}" y1="${y(c.ref).toFixed(1)}" y2="${y(c.ref).toFixed(1)}" style="stroke:var(--muted)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  } else {
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const x = i => pad + i / (n - 1) * (W - 2 * pad), y = v => pad + (hi - v) / ((hi - lo) || 1) * (H - 2 * pad);
+    const xy = pts.map(([, v], i) => v == null ? null : [x(i), y(v)]).filter(Boolean);
+    const line = xy.map(([a, b], i) => `${i ? "L" : "M"}${a.toFixed(1)},${b.toFixed(1)}`).join("");
+    svg += `<path d="${line}L${xy[xy.length - 1][0].toFixed(1)},${H}L${xy[0][0].toFixed(1)},${H}Z" style="fill:var(--accent-soft)"/>`;
+    svg += `<path d="${line}" style="fill:none;stroke:var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+    const [ex, ey] = xy[xy.length - 1];
+    svg += `<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="3.5" style="fill:var(--accent)"/>`;
+  }
+  const lab = m => m.replace("-", "/");
+  return `<div class="chart"><div class="lbl">${c.label}</div>` +
+         `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${c.label}">${svg}</svg>` +
+         `<div class="axis"><span>${lab(pts[0][0])}</span><span>${lab(pts[n - 1][0])}</span></div></div>`;
+}
+function card(c) {
+  const month = c.latest ? `${c.latest.replace("-", "/")}${c.prelim ? " P" : ""}` : "尚無資料";
+  return `<a class="card" href="${c.url}" target="_blank" rel="noopener">
+    <div class="top"><h3>${c.title}</h3><span class="pill">最新 ${month}</span></div>
+    ${c.figures ? `<div class="figs">${c.figures.map(figure).join("")}</div>` : ""}
+    ${c.chart ? chart(c.chart) : ""}
+    <p class="desc">${c.desc}</p>
+    <div class="foot"><span>公布：${c.release}</span><span class="go">開啟網頁 →</span></div>
+  </a>`;
+}
+function init() {
+  if (!HUB) return;
+  document.getElementById("groups").outerHTML = HUB.groups.map(g =>
+    `<section><h2>${g}</h2><div class="grid">${HUB.cards.filter(c => c.group === g).map(card).join("")}</div></section>`).join("");
+  const latestFetch = HUB.cards.map(c => c.fetched).filter(Boolean).sort().pop();
+  document.getElementById("sub").textContent =
+    `美國勞動市場與通膨的互動網頁，資料來源 BLS。最近一次更新 ${latestFetch || "—"}。`;
+}
+init();
+</script>

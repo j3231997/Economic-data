@@ -35,7 +35,7 @@
     {"code": "SAH1", "level": 3, "parent": "SASLE", "en": "Shelter", "zh": "住房", "hidden": true},
     {"code": "SEHA", "level": 3, "parent": "RENTOER", "en": "Rent of primary residence", "zh": "主要住所租金"},
     {"code": "SEHC", "level": 3, "parent": "RENTOER", "en": "Owners' equivalent rent of residences", "zh": "屋主等價租金 OER"},
-    {"code": "SUPERCORE", "level": 2, "parent": "SA0L1E", "en": "Supercore services (core services less rent & OER)", "zh": "超級核心服務（核心服務扣除房租與 OER）", "derived": {"base": "SASLE", "minus": ["SEHA", "SEHC"]}},
+    {"code": "SUPERCORE", "level": 2, "parent": "SA0L1E", "en": "Supercore services", "zh": "超級核心服務", "derived": {"base": "SASLE", "minus": ["SEHA", "SEHC"]}},
     {"code": "SEHB", "level": 3, "parent": "SUPERCORE", "en": "Lodging away from home", "zh": "外宿住宿"},
     {"code": "SAM2", "level": 3, "parent": "SUPERCORE", "en": "Medical care services", "zh": "醫療服務"},
     {"code": "SEMC01", "level": 4, "parent": "SAM2", "en": "Physicians' services", "zh": "醫師服務"},

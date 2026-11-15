@@ -1,0 +1,138 @@
+<title>總經數據入口</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column of indicator groups; each group is a wrapping grid of cards (summary figures, 12-month mini chart, link). */
+:root {
+  --bg: #f6f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #6b6f76; --line: #e2e2dc; --line-strong: #c9c9c1;
+  --accent: #2f5d8a; --accent-soft: #e4ecf4; --neg: #b3261e; --bar: #6f93b8;
+  --font: -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
+    --accent: #8db8e0; --accent-soft: #233445; --neg: #ff8a80; --bar: #5f86ad; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --panel: #1d2024; --ink: #e6e6e3; --muted: #9a9ea6; --line: #2c3036; --line-strong: #3b4048;
+  --accent: #8db8e0; --accent-soft: #233445; --neg: #ff8a80; --bar: #5f86ad; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); }
+.page { max-width: 1200px; margin: 0 auto; padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 28px; }
+header h1 { font-size: 22px; margin: 0 0 4px; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); font-size: 13px; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section h2 { font-size: 13px; letter-spacing: .08em; color: var(--muted); margin: 0; font-weight: 600;
+  padding-bottom: 6px; border-bottom: 1px solid var(--line-strong); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
+.card { min-width: 0; display: flex; flex-direction: column; gap: 10px; background: var(--panel);
+  border: 1px solid var(--line-strong); border-radius: 10px; padding: 14px 16px; color: inherit; text-decoration: none;
+  transition: border-color .15s; }
+.card:hover { border-color: var(--accent); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.top h3 { margin: 0; font-size: 16px; }
+.pill { font-size: 12px; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 1px 8px;
+  white-space: nowrap; font-variant-numeric: tabular-nums; }
+.figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.fig .k { font-size: 11.5px; color: var(--muted); }
+.fig .v { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.fig .v.neg { color: var(--neg); }
+.fig .n { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chart { display: flex; flex-direction: column; gap: 2px; }
+.chart .lbl { font-size: 11.5px; color: var(--muted); }
+.chart svg { width: 100%; height: 64px; display: block; overflow: visible; }
+.chart .axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.desc { margin: 0; font-size: 12.5px; color: var(--muted); }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 12px; color: var(--muted);
+  border-top: 1px solid var(--line); padding-top: 8px; }
+.foot .go { color: var(--accent); font-weight: 600; }
+.howto { font-size: 12.5px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.howto code { background: var(--accent-soft); color: var(--ink); padding: 0 5px; border-radius: 4px; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+<div class="page">
+  <header>
+    <h1>總經數據入口</h1>
+    <p id="sub"></p>
+  </header>
+  <div id="groups"></div>
+  <div class="howto">
+    <div>更新：跟 Claude 說 <code>更新 NFP</code>、<code>更新時薪</code>、<code>更新 JOLTS</code>、<code>更新 CPI</code>，各網頁和這個入口頁的網址都不會變。</div>
+    <div>數字為季調後資料；P 代表最新月含初值，之後會修正。卡片上的數字是 Claude 上次更新時抓的值。</div>
+  </div>
+</div>
+<script>
+const HUB = {"groups":["勞動市場","通膨"],"cards":[{"group":"勞動市場","title":"美國非農就業 NFP","url":"https://claude.ai/artifact/LFicXM9drai7hoMR3GzDWh","release":"每月第一個週五（Employment Situation）","desc":"產業別逐月就業變化、3 個月平均、年度累計；民間超級產業前後 3 名上色。","skill":"us-nfp","latest":"2026-10","prelim":true,"fetched":"2026-11-10 11:47 UTC","figures":[{"k":"非農就業 MoM","v":165.0,"fmt":"k0","sign":true},{"k":"3 個月平均","v":137.0,"fmt":"k0","sign":true},{"k":"就業人數","v":159.293,"unit":"M","fmt":"f1"}],"chart":{"label":"非農 MoM（千人）","type":"bar","ref":0,"points":[["2025-11",41.0],["2025-12",-17.0],["2026-01",160.0],["2026-02",-156.0],["2026-03",214.0],["2026-04",148.0],["2026-05",63.0],["2026-06",31.0],["2026-07",-10.0],["2026-08",186.0],["2026-09",60.0],["2026-10",165.0]]}},{"group":"勞動市場","title":"美國平均時薪 MoM","url":"https://claude.ai/artifact/CWqCGD6vxvPiCCuPfG6buV","release":"與 NFP 同時公布","desc":"產業別時薪兩位小數 MoM、3 個月年化、YoY；時薪 vs NFP 對照分類。","skill":"us-wages","latest":"2026-10","prelim":true,"fetched":"2026-11-14 09:38 UTC","figures":[{"k":"時薪 MoM","v":0.3697834125726329,"unit":"%","fmt":"f2","note":"官方 0.4%"},{"k":"YoY","v":3.1207598371777445,"unit":"%","fmt":"f1"},{"k":"民間平均時薪","v":38.0,"unit":"$","fmt":"f2","prefix":true}],"chart":{"label":"時薪 MoM %（虛線 0.30%）","type":"bar","ref":0.3,"points":[["2025-11",0.407055630936215],["2025-12",0.0540540540540535],["2026-01",0.35116153430576613],["2026-02",0.32301480484524525],["2026-03",0.2146498524282281],["2026-04",0.16064257028112205],["2026-05",0.21384656508955935],["2026-06",0.26673779674579734],["2026-07",0.1330140994945328],["2026-08",0.31880977683313994],["2026-09",0.26483050847458944],["2026-10",0.3697834125726329]]}},{"group":"勞動市場","title":"美國職缺 JOLTS","url":"https://claude.ai/artifact/Kop8CZDuqe7wExvaQbjP62","release":"每月初，比 NFP 晚一個月","desc":"職缺、招聘、自願離職、裁員的產業別水準與比率；失業人數 ÷ 職缺；職缺 vs NFP 對照分類。","skill":"us-jolts","latest":"2026-09","prelim":true,"fetched":"2026-11-14 09:27 UTC","figures":[{"k":"職缺","v":7.523,"unit":"M","fmt":"f2","note":"MoM +333k"},{"k":"職缺率","v":4.5,"unit":"%","fmt":"f1","note":"自願離職率 2.1%"},{"k":"失業人數 ÷ 職缺","v":0.9449687624617839,"fmt":"f2"}],"chart":{"label":"職缺（百萬）","type":"line","points":[["2025-10",7.17],["2025-11",6.846],["2025-12",6.55],["2026-01",7.24],["2026-02",6.922],["2026-03",6.887],["2026-04",7.585],["2026-05",7.537],["2026-06",7.182],["2026-07",7.335],["2026-08",7.19],["2026-09",7.523]]}},{"group":"通膨","title":"美國 CPI 分項","url":"https://claude.ai/artifact/F1brNA4TDvA2n1vLxMsbt3","release":"每月中旬","desc":"CPI-U 分項兩位小數 MoM、3 個月年化、YoY；住房、超級核心、核心商品拆解與貢獻。","skill":"us-cpi","latest":"2026-10","prelim":false,"fetched":"2026-11-11 07:36 UTC","figures":[{"k":"CPI MoM","v":0.3502845690429357,"unit":"%","fmt":"f2","note":"YoY 無資料（2025/10 未公布）"},{"k":"核心 MoM","v":0.2962560785609636,"unit":"%","fmt":"f2","note":"YoY 無資料（2025/10 未公布）"}],"chart":{"label":"核心 CPI MoM %（虛線 0.20%）","type":"bar","ref":0.2,"points":[["2025-11",null],["2025-12",0.2329002576704653],["2026-01",0.2950448142634121],["2026-02",0.21605021740240815],["2026-03",0.19579505385114437],["2026-04",0.376460730477457],["2026-05",0.20809544962627768],["2026-06",-0.016660666843182348],["2026-07",0.2154345141564873],["2026-08",0.2897956881014574],["2026-09",0.3348481932704761],["2026-10",0.2962560785609636]]}}]};
+const fmtNum = (v, f) => {
+  if (v == null || Number.isNaN(v)) return "—";
+  const d = f === "k0" ? 0 : +f.slice(1);
+  const r = Math.round(v * 10 ** d) / 10 ** d || 0;
+  return r.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+};
+function figure(f) {
+  let s = fmtNum(f.v, f.fmt);
+  if (f.sign && f.v != null && Math.round(f.v) > 0) s = "+" + s;
+  if (f.fmt === "k0") s += "k";
+  if (f.unit && f.unit !== "$") s += f.unit;
+  if (f.unit === "$") s = "$" + s;
+  const d = f.fmt === "k0" ? 0 : +f.fmt.slice(1);
+  const neg = f.v != null && Math.round(f.v * 10 ** d) < 0;
+  return `<div class="fig"><div class="k">${f.k}</div><div class="v${neg ? " neg" : ""}">${s}</div>` +
+         `<div class="n">${f.note || "&nbsp;"}</div></div>`;
+}
+function chart(c) {
+  const W = 300, H = 64, pad = 4, pts = c.points, n = pts.length;
+  const vals = pts.map(p => p[1]).filter(v => v != null);
+  if (!vals.length) return "";
+  let svg = "";
+  if (c.type === "bar") {
+    const lo = Math.min(0, ...vals, c.ref ?? 0), hi = Math.max(0, ...vals, c.ref ?? 0);
+    const y = v => pad + (hi - v) / ((hi - lo) || 1) * (H - 2 * pad);
+    const bw = W / n;
+    pts.forEach(([m, v], i) => {
+      if (v == null) return;
+      const y0 = y(0), y1 = y(v), top = Math.min(y0, y1), h = Math.max(Math.abs(y1 - y0), 1);
+      svg += `<rect x="${(i * bw + bw * 0.15).toFixed(1)}" y="${top.toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" style="fill:var(${v < 0 ? "--neg" : "--bar"})"><title>${m}: ${v.toFixed(2)}</title></rect>`;
+    });
+    svg += `<line x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" style="stroke:var(--line-strong)" stroke-width="1"/>`;
+    if (c.ref) svg += `<line x1="0" x2="${W}" y1="${y(c.ref).toFixed(1)}" y2="${y(c.ref).toFixed(1)}" style="stroke:var(--muted)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  } else {
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const x = i => pad + i / (n - 1) * (W - 2 * pad), y = v => pad + (hi - v) / ((hi - lo) || 1) * (H - 2 * pad);
+    const xy = pts.map(([, v], i) => v == null ? null : [x(i), y(v)]).filter(Boolean);
+    const line = xy.map(([a, b], i) => `${i ? "L" : "M"}${a.toFixed(1)},${b.toFixed(1)}`).join("");
+    svg += `<path d="${line}L${xy[xy.length - 1][0].toFixed(1)},${H}L${xy[0][0].toFixed(1)},${H}Z" style="fill:var(--accent-soft)"/>`;
+    svg += `<path d="${line}" style="fill:none;stroke:var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+    const [ex, ey] = xy[xy.length - 1];
+    svg += `<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="3.5" style="fill:var(--accent)"/>`;
+  }
+  const lab = m => m.replace("-", "/");
+  return `<div class="chart"><div class="lbl">${c.label}</div>` +
+         `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${c.label}">${svg}</svg>` +
+         `<div class="axis"><span>${lab(pts[0][0])}</span><span>${lab(pts[n - 1][0])}</span></div></div>`;
+}
+function card(c) {
+  const month = c.latest ? `${c.latest.replace("-", "/")}${c.prelim ? " P" : ""}` : "尚無資料";
+  return `<a class="card" href="${c.url}" target="_blank" rel="noopener">
+    <div class="top"><h3>${c.title}</h3><span class="pill">最新 ${month}</span></div>
+    ${c.figures ? `<div class="figs">${c.figures.map(figure).join("")}</div>` : ""}
+    ${c.chart ? chart(c.chart) : ""}
+    <p class="desc">${c.desc}</p>
+    <div class="foot"><span>公布：${c.release}</span><span class="go">開啟網頁 →</span></div>
+  </a>`;
+}
+function init() {
+  if (!HUB) return;
+  document.getElementById("groups").outerHTML = HUB.groups.map(g =>
+    `<section><h2>${g}</h2><div class="grid">${HUB.cards.filter(c => c.group === g).map(card).join("")}</div></section>`).join("");
+  const latestFetch = HUB.cards.map(c => c.fetched).filter(Boolean).sort().pop();
+  document.getElementById("sub").textContent =
+    `美國勞動市場與通膨的互動網頁，資料來源 BLS。最近一次更新 ${latestFetch || "—"}。`;
+}
+init();
+</script>
