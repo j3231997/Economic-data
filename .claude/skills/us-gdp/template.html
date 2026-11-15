@@ -136,7 +136,7 @@ const VIEWS = {
 const NOW_VIEWS = new Set(["contrib", "saar2", "saar1"]);   // views where the GDPNow column has numbers
 const SORTS = { bea: "BEA 原順序", share: "占比大→小" };
 const LEVEL_NAMES = ["GDP", "大項", "中項", "細項", "", "", ""];
-const state = { mode: "real", view: "contrib", sort: "bea", heat: true, edge: true, collapsed: new Set() };
+const state = { mode: "real", view: "saar1", sort: "bea", heat: true, edge: true, collapsed: new Set() };
 // Color scale: growth views center on a trend rate; contributions center on 0.
 const HEAT = {
   contrib: { real: [0, 1.0], nom: [0, 1.5] },
