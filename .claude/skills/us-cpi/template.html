@@ -66,7 +66,17 @@ tr.special td { font-style: italic; }
 .legend { color: var(--muted); font-size: 12px; padding: 8px 2px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; }
 .empty { padding: 40px; text-align: center; color: var(--muted); }
-@media (max-width: 640px) { th.name, td.name { min-width: 190px; } .zh { display: none; } }
+@media (max-width: 640px) {
+  /* Phone: keep the sticky name column narrow so the number columns stay visible and scroll beside it */
+  :root { --ind: 10px; }
+  header { padding-top: 14px; }
+  h1 { font-size: 17px; }
+  .controls { gap: 6px 12px; padding: 8px 16px; }
+  th, td { padding-left: 5px; padding-right: 5px; }
+  th.name, td.name { min-width: 40vw; width: 40vw; max-width: 40vw; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; font-size: 12.5px; }
+  td.num { min-width: 50px; font-size: 13px; }
+  .zh { display: none; }
+}
 </style>
 </head>
 <body>
@@ -249,7 +259,7 @@ function render(ctx) {
                           : "<span class='caret leaf'></span>";
     const lv = r.special ? (r.after && ctx.byId[r.after] ? ctx.byId[r.after].level : 1) : r.level;
     h += `<tr class='lv${lv} ${r.special ? "special" : ""}' title='${r.derived ? `計算值：${r.formula}（前月權重、未捨入季調 MoM）` : `CUSR0000${r.code} / CUUR0000${r.code}`}'>`;
-    h += `<td class='name' style='padding-left:${8 + lv * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span>${r.useNsa ? "<span class='tag'>NSA</span>" : ""}${r.derived ? "<span class='tag'>計算</span>" : ""}</td>`;
+    h += `<td class='name' style='padding-left:calc(8px + ${lv} * var(--ind, 18px))'>${caret}${r.en}<span class='zh'>${r.zh}</span>${r.useNsa ? "<span class='tag'>NSA</span>" : ""}${r.derived ? "<span class='tag'>計算</span>" : ""}</td>`;
     if (hasWeights) {
       h += `<td class='num'>${r.weight != null ? fmt(r.weight, 3) : ""}</td>`;
       h += `<td class='num ${r.contrib < 0 ? "neg" : ""}'>${r.contrib != null ? fmt(r.contrib, 3) : ""}</td>`;

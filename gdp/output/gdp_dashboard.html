@@ -80,7 +80,17 @@ th .p { color: var(--accent); font-weight: 700; margin-left: 2px; }
 .legend { color: var(--muted); font-size: 12px; padding: 8px 2px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; }
 .empty { padding: 40px; text-align: center; color: var(--muted); }
-@media (max-width: 640px) { th.name, td.name { min-width: 190px; } .zh { display: none; } }
+@media (max-width: 640px) {
+  /* Phone: keep the sticky name column narrow so the number columns stay visible and scroll beside it */
+  :root { --ind: 10px; }
+  header { padding-top: 14px; }
+  h1 { font-size: 17px; }
+  .controls { gap: 6px 12px; padding: 8px 16px; }
+  th, td { padding-left: 5px; padding-right: 5px; }
+  th.name, td.name { min-width: 40vw; width: 40vw; max-width: 40vw; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; font-size: 12.5px; }
+  td.num { min-width: 50px; font-size: 13px; }
+  .zh { display: none; }
+}
 </style>
 </head>
 <body>
@@ -311,7 +321,7 @@ function render() {
     const cls = `lv${Math.min(r.level, 1)} ${r.special ? "special" : ""} ${r.id === "PDFP" ? "key" : ""} ${r === specials[specials.length - 1] ? "last" : ""}`;
     const calc = state.mode === "real" && (state.view === "contrib" || state.view === "rev") && r.csrc === "calc";
     h += `<tr class='${cls}' title='BEA ${r.nomCode} / ${r.realCode}${calc ? "；貢獻為自算（已對齊官方母項）" : ""}'>`;
-    h += `<td class='name' style='padding-left:${8 + r.level * 18}px'>${caret}${r.en}<span class='zh'>${r.zh}</span></td>`;
+    h += `<td class='name' style='padding-left:calc(8px + ${r.level} * var(--ind, 18px))'>${caret}${r.en}<span class='zh'>${r.zh}</span></td>`;
     h += `<td class='num'>${r.shareLatest != null ? fmt(r.shareLatest, 1) : ""}</td>`;
     if (showNow) {
       const v = nowValue(r);
