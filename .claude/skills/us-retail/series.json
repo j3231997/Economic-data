@@ -7,7 +7,7 @@
     {"id": "EXAUTOGAS", "level": 1, "parent": "TOTAL",   "adv": "44W72", "special": true, "en": "Total excl. motor vehicle & parts and gasoline", "zh": "扣除汽車與加油站"},
     {"id": "RETAIL",    "level": 1, "parent": "TOTAL",   "adv": "44000", "special": true, "en": "Retail total (excl. food services)",           "zh": "零售總額（不含餐飲）"},
 
-    {"id": "CONTROL",   "level": 1, "parent": "TOTAL",   "en": "Control group (excl. autos, gas, building materials, food services)", "zh": "控制組（扣除汽車、加油站、建材、餐飲）",
+    {"id": "CONTROL",   "level": 1, "parent": "TOTAL",   "en": "Control group (excl. autos, gas, building materials, food services)", "zh": "",
      "derived": {"base": "TOTAL", "minus": ["441", "444", "447", "722"]}},
     {"id": "442",       "level": 2, "parent": "CONTROL", "adv": "44200", "en": "Furniture & home furnishings stores",                "zh": "家具與家飾"},
     {"id": "443",       "level": 2, "parent": "CONTROL", "adv": "44300", "en": "Electronics & appliance stores",                     "zh": "電子與家電"},
