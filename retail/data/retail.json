@@ -235,7 +235,7 @@
    "level": 1,
    "parent": "TOTAL",
    "en": "Control group (excl. autos, gas, building materials, food services)",
-   "zh": "控制組（扣除汽車、加油站、建材、餐飲）",
+   "zh": "",
    "derived": {
     "base": "TOTAL",
     "minus": [
