@@ -30,7 +30,8 @@ description: 收集美國耐久財（Census M3 Manufacturers' Shipments, Invento
    ```bash
    python3 .claude/skills/us-durable-goods/scripts/build_dashboard.py --artifact --out <scratchpad>/durable_artifact.html
    ```
-   用 Artifact 工具發布這個檔案（去掉 html/head/body 外殼的版本）；之前發布過就更新同一個網址。
+   用 Artifact 工具發布這個檔案（去掉 html/head/body 外殼的版本）；之前發布過就更新同一個網址（https://claude.ai/artifact/PxoochK6zQdkhpm3ubMWxm）。
+   - 同時更新「總經數據入口」https://claude.ai/artifact/9GhDBgXT3GNcX6XdjS8zh8 的耐久財卡片（`製造業與投資` 群組，`skill: us-durable-goods`）：先用 Artifact read 讀最新版，只改這張卡的 `latest`、`prelim`（完整報告 true＝P）、`fetched`、三個數字（耐久財訂單 MoM、扣除運輸 MoM、核心資本財訂單 MoM，note 放官方一位小數）與近 12 個月核心資本財新訂單 MoM 圖，再發布回同一網址。
 4. 確認：總額、扣除運輸、扣除國防、核心資本財的「官方 1 位」欄要跟新聞稿一致。2026-09 驗證：advance（10/27 公布）新訂單 總額 1.84→1.8、扣除運輸 0.46→0.5、扣除國防 2.19→2.2、核心資本財 0.46→0.5，與 table1a 一致；完整報告（11/3 公布）新訂單總額修正為 1.91→1.9、核心資本財 0.649→0.6（兩位小數 0.65 正好在進位邊界，官方 1 位要看第三位）。七大產業加總剛好等於總額（新訂單 345,672、出貨 336,879）。
 
 ## 網頁功能
@@ -44,6 +45,7 @@ description: 收集美國耐久財（Census M3 Manufacturers' Shipments, Invento
 - 進位邊界：兩位小數為 x.x5 時加點狀底線，官方一位小數取決於第三位。
 - 同層產業預設按占比由大到小排序，可切回 Census 原順序。
 - 標籤：`完整報告` = advance 報告沒有的細項。
+- 核心資本財標色（可用「標示核心資本財」關閉）：項目欄深綠底＋實線 = 推測整個產業屬於核心資本財（非國防資本財扣除飛機），淡綠底 = 部分屬於。Census 不逐產業公布歸屬，這是依 advance table1a 註腳 3 的資本財產品清單推測，定義在 `series.json` 的 `core`（`full`／`partial`）。
 
 ## 分析時注意
 
